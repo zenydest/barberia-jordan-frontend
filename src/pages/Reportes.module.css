@@ -1,0 +1,279 @@
+.container {
+  padding: 2rem;
+  background: var(--color-background);
+  min-height: calc(100vh - 80px);
+}
+
+.title {
+  font-size: 2.5rem;
+  color: #FF6B35;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+  font-size: 1rem;
+}
+
+.filterSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--color-surface);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.buttonGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.filterBtn {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.filterBtn:hover {
+  border-color: #FF6B35;
+  color: #FF6B35;
+}
+
+.filterBtn.active {
+  background: #FF6B35;
+  border-color: #FF6B35;
+  color: white;
+}
+
+.rangoPersonalizado {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rangoPersonalizado input {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 120px;
+}
+
+.btnRango {
+  padding: 0.75rem 1.5rem;
+  background: #FF6B35;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btnRango:hover {
+  background: #E55A24;
+  transform: translateY(-2px);
+}
+
+.btnRecargar {
+  display: block;
+  margin: 0 auto 2rem;
+  padding: 0.75rem 1.5rem;
+  background: #22C55E;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.btnRecargar:hover {
+  background: #16A34A;
+  transform: translateY(-2px);
+}
+
+.loading {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 5px solid;
+  background: var(--color-surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.statCard.green {
+  border-left-color: #22C55E;
+}
+
+.statCard.blue {
+  border-left-color: #3B82F6;
+}
+
+.statCard.orange {
+  border-left-color: #F97316;
+}
+
+.statIcon {
+  font-size: 2.5rem;
+}
+
+.statContent {
+  flex: 1;
+}
+
+.statLabel {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.alert {
+  padding: 1.5rem;
+  background: #FEF3C7;
+  color: #92400E;
+  border-radius: 8px;
+  border-left: 4px solid #F59E0B;
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
+
+.servicesSection {
+  background: var(--color-surface);
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  color: var(--color-text);
+  margin: 0 0 1.5rem 0;
+  font-weight: 600;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: var(--color-background);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.table th {
+  padding: 1rem;
+  text-align: left;
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.table tbody tr:hover {
+  background: var(--color-background);
+}
+
+.cantidad {
+  text-align: center;
+  font-weight: 600;
+  color: #3B82F6;
+}
+
+.ingresos {
+  text-align: right;
+  font-weight: 600;
+  color: #22C55E;
+}
+
+.noData {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.8rem;
+  }
+
+  .buttonGroup {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rangoPersonalizado {
+    flex-direction: column;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem;
+  }
+}
