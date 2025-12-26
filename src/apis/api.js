@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-api.onrender.com';
+const API_URL = import.meta.env.MODE === 'development' 
+  ? 'http://localhost:5000'
+  : 'https://barberia-jordan-api.onrender.com'
 
 const api = {
   // Generic methods

@@ -25,11 +25,9 @@ const handleExport = async (e) => {
     const url = 'http://localhost:5000/api/exportar/generar?' + params.toString()
     console.log('Descargando desde:', url)
     
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error('Error en la respuesta del servidor')
-    }
-    
+   const response = await fetch(
+    `${API_URL}/exportar/generar?type=${exportType}&reportType=${reportType}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`
+    )
     const blob = await response.blob()
     
     // Crear descarga con extensión correcta
