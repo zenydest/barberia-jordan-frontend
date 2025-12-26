@@ -1,6 +1,3 @@
-Perfecto, aquí está el api.js completo y listo para copiar:
-
-javascript
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-api.onrender.com';
 
 const api = {
