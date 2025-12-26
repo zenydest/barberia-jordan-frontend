@@ -1,5 +1,5 @@
 import ThemeToggle from './ThemeToggle'
-import '../styles/app.css'
+import '../styles/App.css'
 
 const Navbar = ({ theme, toggleTheme, onNavigate }) => {
   const menuItems = [
