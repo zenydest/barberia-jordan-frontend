@@ -1,4 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-api.onrender.com/api';
+Perfecto, aquí está el api.js completo y listo para copiar:
+
+javascript
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-api.onrender.com';
 
 const api = {
   // Generic methods
@@ -109,7 +112,24 @@ const api = {
       body: JSON.stringify(data)
     });
     return await response.json();
-  }
+  },
+
+  // Reportes ← AGREGAR ESTAS 3 FUNCIONES
+  getDiario: async () => {
+    const response = await fetch(API_BASE_URL + '/reportes/diario');
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
+    return await response.json();
+  },
+  getServidosVendidos: async () => {
+    const response = await fetch(API_BASE_URL + '/reportes/servicios-vendidos');
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
+    return await response.json();
+  },
+  getSemanal: async () => {
+    const response = await fetch(API_BASE_URL + '/reportes/semanal');
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
+    return await response.json();
+  },
 };
 
 export default api;
