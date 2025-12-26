@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '../apis/api'
+import { getCobros, createCobro, getClientes, getBarberos, getServicios } from '../apis/api'
 
 const Cobros = () => {
   const [cobros, setCobros] = useState([])
@@ -18,38 +18,41 @@ const Cobros = () => {
 
   const cargarDatos = async () => {
     try {
-      const [cobrosData, clientesData, barberosData, serviciosData] = await Promise.all([
-        api.getCobros(),
-        api.getClientes(),
-        api.getBarberos(),
-        api.getServicios()
+      const [cobrosRes, clientesRes, barberosRes, serviciosRes] = await Promise.all([
+        getCobros(),
+        getClientes(),
+        getBarberos(),
+        getServicios()
       ])
-      setCobros(cobrosData)
-      setClientes(clientesData)
-      setBarberos(barberosData)
-      setServicios(serviciosData)
+      
+      setCobros(cobrosRes.data)
+      setClientes(clientesRes.data)
+      setBarberos(barberosRes.data)
+      setServicios(serviciosRes.data)
     } catch (err) {
-      console.error('Error:', err)
+      console.error('Error al cargar datos:', err)
     }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!clienteId || !barberoId || !servicioId || !monto) return
+    
     try {
-      await api.createCobro({
+      await createCobro({
         cliente_id: parseInt(clienteId),
         barbero_id: parseInt(barberoId),
         servicio_id: parseInt(servicioId),
         monto: parseFloat(monto)
       })
+      
       setClienteId('')
       setBarberoId('')
       setServicioId('')
       setMonto('')
       cargarDatos()
     } catch (err) {
-      console.error('Error:', err)
+      console.error('Error al crear cobro:', err)
     }
   }
 
@@ -92,7 +95,7 @@ const Cobros = () => {
           >
             <option value="">Seleccionar servicio</option>
             {servicios.map((s) => (
-              <option key={s.id} value={s.id}>{s.nombre} - \${s.precio.toFixed(2)}</option>
+              <option key={s.id} value={s.id}>{s.nombre} - ${s.precio.toFixed(2)}</option>
             ))}
           </select>
           
@@ -133,7 +136,7 @@ const Cobros = () => {
                     <tr key={cobro.id}>
                       <td>{cliente?.nombre || 'Desconocido'}</td>
                       <td>{barbero?.nombre || 'Desconocido'}</td>
-                      <td>\${cobro.monto.toFixed(2)}</td>
+                      <td>${cobro.monto.toFixed(2)}</td>
                       <td>{new Date(cobro.fecha).toLocaleDateString()}</td>
                     </tr>
                   )

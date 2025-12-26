@@ -1,134 +1,52 @@
-const API_URL = import.meta.env.MODE === 'development' 
-  ? 'http://localhost:5000'
-  : 'https://barberia-jordan-api.onrender.com'
+// frontend/src/apis/api.js
 
-const api = {
-  // Generic methods
-  get: async (endpoint) => {
-    const response = await fetch(API_BASE_URL + endpoint);
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return { data: await response.json() };
-  },
-  post: async (endpoint, data) => {
-    const response = await fetch(API_BASE_URL + endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return { data: await response.json() };
-  },
-  put: async (endpoint, data) => {
-    const response = await fetch(API_BASE_URL + endpoint, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return { data: await response.json() };
-  },
-  delete: async (endpoint) => {
-    const response = await fetch(API_BASE_URL + endpoint, { method: 'DELETE' });
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return { data: await response.json() };
-  },
+import axios from 'axios'
 
-  // Clientes
-  getClientes: async () => {
-    const response = await fetch(API_BASE_URL + '/clientes');
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return await response.json();
-  },
-  createCliente: async (data) => {
-    const response = await fetch(API_BASE_URL + '/clientes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await response.json();
-  },
-  updateCliente: async (id, data) => {
-    const response = await fetch(API_BASE_URL + '/clientes/' + id, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await response.json();
-  },
-  deleteCliente: async (id) => {
-    const response = await fetch(API_BASE_URL + '/clientes/' + id, { method: 'DELETE' });
-    return await response.json();
-  },
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-api.onrender.com/api'
 
-  // Barberos
-  getBarberos: async () => {
-    const response = await fetch(API_BASE_URL + '/barberos');
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return await response.json();
-  },
-  createBarbero: async (data) => {
-    const response = await fetch(API_BASE_URL + '/barberos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await response.json();
-  },
-  deleteBarbero: async (id) => {
-    const response = await fetch(API_BASE_URL + '/barberos/' + id, { method: 'DELETE' });
-    return await response.json();
-  },
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+})
 
-  // Servicios
-  getServicios: async () => {
-    const response = await fetch(API_BASE_URL + '/servicios');
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return await response.json();
-  },
-  createServicio: async (data) => {
-    const response = await fetch(API_BASE_URL + '/servicios', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await response.json();
-  },
-  deleteServicio: async (id) => {
-    const response = await fetch(API_BASE_URL + '/servicios/' + id, { method: 'DELETE' });
-    return await response.json();
-  },
+// Métodos para Cobros
+export const getCobros = () => api.get('/cobros')
+export const getCobro = (id) => api.get(`/cobros/${id}`)
+export const createCobro = (data) => api.post('/cobros', data)
+export const updateCobro = (id, data) => api.put(`/cobros/${id}`, data)
+export const deleteCobro = (id) => api.delete(`/cobros/${id}`)
 
-  // Cobros
-  getCobros: async () => {
-    const response = await fetch(API_BASE_URL + '/cobros');
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return await response.json();
-  },
-  createCobro: async (data) => {
-    const response = await fetch(API_BASE_URL + '/cobros', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await response.json();
-  },
+// Métodos para Clientes
+export const getClientes = () => api.get('/clientes')
+export const getCliente = (id) => api.get(`/clientes/${id}`)
+export const createCliente = (data) => api.post('/clientes', data)
+export const updateCliente = (id, data) => api.put(`/clientes/${id}`, data)
+export const deleteCliente = (id) => api.delete(`/clientes/${id}`)
 
-  // Reportes ← AGREGAR ESTAS 3 FUNCIONES
-  getDiario: async () => {
-    const response = await fetch(API_BASE_URL + '/reportes/diario');
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return await response.json();
-  },
-  getServidosVendidos: async () => {
-    const response = await fetch(API_BASE_URL + '/reportes/servicios-vendidos');
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return await response.json();
-  },
-  getSemanal: async () => {
-    const response = await fetch(API_BASE_URL + '/reportes/semanal');
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-    return await response.json();
-  },
-};
+// Métodos para Barberos
+export const getBarberos = () => api.get('/barberos')
+export const getBarbero = (id) => api.get(`/barberos/${id}`)
+export const createBarbero = (data) => api.post('/barberos', data)
+export const updateBarbero = (id, data) => api.put(`/barberos/${id}`, data)
+export const deleteBarbero = (id) => api.delete(`/barberos/${id}`)
 
-export default api;
+// Métodos para Servicios
+export const getServicios = () => api.get('/servicios')
+export const getServicio = (id) => api.get(`/servicios/${id}`)
+export const createServicio = (data) => api.post('/servicios', data)
+export const updateServicio = (id, data) => api.put(`/servicios/${id}`, data)
+export const deleteServicio = (id) => api.delete(`/servicios/${id}`)
+
+// Métodos para Reportes
+export const getReporteDiario = () => api.get('/reportes/diario')
+export const getReporteMensual = () => api.get('/reportes/mensual')
+export const getReporteSemanal = () => api.get('/reportes/semanal')
+export const getReportePorBarbero = () => api.get('/reportes/por-barbero')
+
+// Exportar
+export const exportarReporte = (params) => {
+  const queryString = new URLSearchParams(params).toString()
+  return api.get(`/exportar/generar?${queryString}`, { responseType: 'blob' })
+}
+
+export default api
