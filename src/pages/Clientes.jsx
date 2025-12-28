@@ -14,7 +14,8 @@ const Clientes = () => {
   const cargarClientes = async () => {
     try {
       const response = await clientesService.getClientes()
-      setClientes(response.data)  // ⚠️ IMPORTANTE: axios devuelve data en response.data
+      // axios => la data viene en response.data
+      setClientes(response.data)
     } catch (err) {
       console.error('Error cargando clientes:', err)
     }
@@ -45,7 +46,12 @@ const Clientes = () => {
     }
   }
 
-  // ... resto del JSX
+  return (
+    <>
+      {/* TODO: aquí va exactamente tu JSX original (form + tarjeta + tabla),
+          usando clientes, handleSubmit, handleDelete, nombre, telefono, email */}
+    </>
+  )
 }
 
 export default Clientes
