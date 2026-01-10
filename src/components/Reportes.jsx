@@ -5,7 +5,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import logo from '../assets/logo-jordan.png';
 
-const API_URL = 'http://localhost:5000/api';
+import API_URL from '../config.js';
+
 
 export default function Reportes() {
   const [citas, setCitas] = useState([]);

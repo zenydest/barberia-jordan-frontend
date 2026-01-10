@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+import API_URL from '../config.js';
+
 
 export default function Dashboard() {
   const [citas, setCitas] = useState([]);
