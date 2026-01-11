@@ -5,11 +5,29 @@ export const AuthContext = createContext();
 
 import API_URL from '../config.js';
 
+// Crear instancia de axios con interceptor
+const axiosInstance = axios.create({
+  baseURL: API_URL
+});
+
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Configurar el token en axios cuando cambia
+  useEffect(() => {
+    if (token) {
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      console.log('✅ Token configurado en axios');
+    } else {
+      delete axiosInstance.defaults.headers.common['Authorization'];
+      delete axios.defaults.headers.common['Authorization'];
+      console.log('❌ Token removido de axios');
+    }
+  }, [token]);
 
   // Verificar token al cargar
   useEffect(() => {
@@ -20,9 +38,7 @@ export function AuthProvider({ children }) {
 
   const verificarToken = async () => {
     try {
-      const res = await axios.get(`${API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axiosInstance.get('/auth/me');
       setUsuario(res.data);
     } catch (err) {
       console.error('Token inválido');
@@ -34,7 +50,7 @@ export function AuthProvider({ children }) {
     try {
       setLoading(true);
       setError('');
-      const res = await axios.post(`${API_URL}/auth/registro`, {
+      const res = await axiosInstance.post('/auth/registro', {
         email,
         password,
         nombre,
@@ -59,14 +75,15 @@ export function AuthProvider({ children }) {
     try {
       setLoading(true);
       setError('');
-      const res = await axios.post(`${API_URL}/auth/login`, {
+      const res = await axiosInstance.post('/auth/login', {
         email,
         password
       });
       
-      setToken(res.data.token);
+      const newToken = res.data.token;
+      setToken(newToken);
       setUsuario(res.data.usuario);
-      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('token', newToken);
       
       return res.data;
     } catch (err) {
@@ -84,35 +101,23 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
   };
 
-  // Configurar interceptor de axios UNA SOLA VEZ al montar
+  // Interceptor de respuesta para manejar 401
   useEffect(() => {
-    // Interceptor de respuesta para manejar errores 401
-    const responseInterceptor = axios.interceptors.response.use(
+    const responseInterceptor = axiosInstance.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
+          console.warn('⚠️ 401 Unauthorized - Logout');
           logout();
         }
         return Promise.reject(error);
       }
     );
 
-    // Cleanup
     return () => {
-      axios.interceptors.response.eject(responseInterceptor);
+      axiosInstance.interceptors.response.eject(responseInterceptor);
     };
   }, []);
-
-  // Configurar header de Authorization cuando el token cambia
-  useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      console.log('✅ Token configurado:', token.substring(0, 20) + '...');
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-      console.log('❌ Token removido');
-    }
-  }, [token]);
 
   return (
     <AuthContext.Provider value={{
@@ -123,9 +128,12 @@ export function AuthProvider({ children }) {
       login,
       registro,
       logout,
-      isAutenticado: !!token
+      isAutenticado: !!token,
+      axios: axiosInstance  // ← Exporta la instancia
     }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
+export default axiosInstance;

@@ -5,6 +5,7 @@ import API_URL from '../config.js';
 
 export default function Barberos() {
   const { axios } = useContext(AuthContext);
+  console.log('axios en Barberos:', axios);
   const [barberos, setBarberos] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
