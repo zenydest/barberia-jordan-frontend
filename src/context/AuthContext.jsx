@@ -84,12 +84,33 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
   };
 
-  // Configurar interceptor para todas las peticiones
+  // Configurar interceptor de axios UNA SOLA VEZ al montar
+  useEffect(() => {
+    // Interceptor de respuesta para manejar errores 401
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup
+    return () => {
+      axios.interceptors.response.eject(responseInterceptor);
+    };
+  }, []);
+
+  // Configurar header de Authorization cuando el token cambia
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      console.log('✅ Token configurado:', token.substring(0, 20) + '...');
     } else {
       delete axios.defaults.headers.common['Authorization'];
+      console.log('❌ Token removido');
     }
   }, [token]);
 
