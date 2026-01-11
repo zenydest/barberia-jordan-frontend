@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 
 import API_URL from '../config.js';
 
 
 export default function Servicios() {
+  const { axios } = useContext(AuthContext);
   const [servicios, setServicios] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ export default function Servicios() {
 
   useEffect(() => {
     cargarServicios();
-  }, []);
+  }, [axios]);
 
   const cargarServicios = async () => {
     try {

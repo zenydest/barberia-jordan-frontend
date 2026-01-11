@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import API_URL from '../config.js';
+
 
 import API_URL from '../config.js';
 
 
 export default function Barberos() {
+  const { axios } = useContext(AuthContext);
   const [barberos, setBarberos] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -22,7 +25,7 @@ export default function Barberos() {
 
   useEffect(() => {
     cargarBarberos();
-  }, []);
+  }, [axios]);
 
   const cargarBarberos = async () => {
     try {

@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import logo from '../assets/logo-jordan.png';
-
 import API_URL from '../config.js';
 
 
 export default function Reportes() {
+  const { axios } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [barberos, setBarberos] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -24,7 +24,7 @@ export default function Reportes() {
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [axios]);
 
   const cargarDatos = async () => {
     try {

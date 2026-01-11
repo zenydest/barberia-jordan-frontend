@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import API_URL from '../config.js';
 
 
 export default function Citas() {
+  const { axios } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [barberos, setBarberos] = useState([]);
@@ -26,7 +26,7 @@ export default function Citas() {
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [axios]);
 
   const cargarDatos = async () => {
     try {

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import API_URL from '../config.js';
 
 
 export default function Clientes() {
+  const { axios } = useContext(AuthContext);
   const [clientes, setClientes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ export default function Clientes() {
 
   useEffect(() => {
     cargarClientes();
-  }, []);
+  }, [axios]);
 
   const cargarClientes = async () => {
     try {

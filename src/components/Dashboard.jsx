@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
 
 import API_URL from '../config.js';
 
 
 export default function Dashboard() {
+  const { axios } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [barberos, setBarberos] = useState([]);
@@ -15,7 +16,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [axios]);
 
   const cargarDatos = async () => {
     try {
