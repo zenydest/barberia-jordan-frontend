@@ -3,8 +3,6 @@ import axios from 'axios';
 
 export const AuthContext = createContext();
 
-import API_URL from '../config.js';
-
 // Crear instancia de axios con interceptor
 const axiosInstance = axios.create({
   baseURL: API_URL

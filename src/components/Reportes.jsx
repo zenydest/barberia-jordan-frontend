@@ -4,7 +4,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import logo from '../assets/logo-jordan.png';
-import API_URL from '../config.js';
 
 
 export default function Reportes() {

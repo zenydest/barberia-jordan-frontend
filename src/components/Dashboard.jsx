@@ -2,8 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { AuthContext } from '../context/AuthContext';
 
-import API_URL from '../config.js';
-
 
 export default function Dashboard() {
   const { axios } = useContext(AuthContext);
