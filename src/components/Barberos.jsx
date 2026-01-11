@@ -3,9 +3,6 @@ import { AuthContext } from '../context/AuthContext';
 import API_URL from '../config.js';
 
 
-import API_URL from '../config.js';
-
-
 export default function Barberos() {
   const { axios } = useContext(AuthContext);
   const [barberos, setBarberos] = useState([]);
