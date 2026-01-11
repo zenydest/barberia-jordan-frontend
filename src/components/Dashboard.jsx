@@ -22,10 +22,10 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const [citasRes, clientesRes, barberosRes, serviciosRes] = await Promise.all([
-        axios.get(`${API_URL}/citas`),
-        axios.get(`${API_URL}/clientes`),
-        axios.get(`${API_URL}/barberos`),
-        axios.get(`${API_URL}/servicios`)
+        axios.get(`/citas`),
+        axios.get(`/clientes`),
+        axios.get(`/barberos`),
+        axios.get(`/servicios`)
       ]);
       
       setCitas(citasRes.data);

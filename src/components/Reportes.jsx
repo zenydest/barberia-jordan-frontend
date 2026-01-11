@@ -30,9 +30,9 @@ export default function Reportes() {
     try {
       setLoading(true);
       const [citasRes, barberosRes, clientesRes] = await Promise.all([
-        axios.get(`${API_URL}/citas`),
-        axios.get(`${API_URL}/barberos`),
-        axios.get(`${API_URL}/clientes`)
+        axios.get(`/citas`),
+        axios.get(`/barberos`),
+        axios.get(`/clientes`)
       ]);
       
       setCitas(citasRes.data);

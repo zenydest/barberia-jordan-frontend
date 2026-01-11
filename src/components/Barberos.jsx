@@ -66,7 +66,7 @@ export default function Barberos() {
 
     try {
       setLoading(true);
-      await axios.post(`${API_URL}/barberos`, formData);
+      await axios.post('/barberos', formData);
       
       setSuccess('¡Barbero registrado exitosamente!');
       setFormData({
@@ -109,7 +109,7 @@ export default function Barberos() {
 
     try {
       setLoading(true);
-      await axios.put(`${API_URL}/barberos/${editingBarbero.id}`, {
+      await axios.put(`/barberos/${editingBarbero.id}`, {
         nombre: editingBarbero.nombre,
         email: editingBarbero.email,
         telefono: editingBarbero.telefono,
@@ -134,7 +134,7 @@ export default function Barberos() {
     if (window.confirm('¿Estás seguro de que deseas eliminar este barbero?')) {
       try {
         setLoading(true);
-        await axios.delete(`${API_URL}/barberos/${id}`);
+        await axios.delete(`/barberos/${id}`);
         setSuccess('Barbero eliminado correctamente');
         setError('');
         await cargarBarberos();

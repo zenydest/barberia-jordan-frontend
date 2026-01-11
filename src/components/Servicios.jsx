@@ -60,10 +60,10 @@ export default function Servicios() {
       setLoading(true);
       
       if (editingId) {
-        await axios.put(`${API_URL}/servicios/${editingId}`, formData);
+        await axios.put(`/servicios/${editingId}`, formData);
         setSuccess('¡Servicio actualizado exitosamente!');
       } else {
-        await axios.post(`${API_URL}/servicios`, formData);
+        await axios.post(`/servicios`, formData);
         setSuccess('¡Servicio creado exitosamente!');
       }
       
@@ -111,7 +111,7 @@ export default function Servicios() {
     if (window.confirm('¿Estás seguro de que deseas eliminar este servicio?')) {
       try {
         setLoading(true);
-        await axios.delete(`${API_URL}/servicios/${id}`);
+        await axios.delete(`/servicios/${id}`);
         setSuccess('Servicio eliminado correctamente');
         setError('');
         await cargarServicios();

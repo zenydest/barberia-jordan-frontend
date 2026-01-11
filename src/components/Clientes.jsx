@@ -57,10 +57,10 @@ export default function Clientes() {
       setLoading(true);
       
       if (editingId) {
-        await axios.put(`${API_URL}/clientes/${editingId}`, formData);
+        await axios.put(`/clientes/${editingId}`, formData);
         setSuccess('¡Cliente actualizado exitosamente!');
       } else {
-        await axios.post(`${API_URL}/clientes`, formData);
+        await axios.post(`/clientes`, formData);
         setSuccess('¡Cliente creado exitosamente!');
       }
       
@@ -108,7 +108,7 @@ export default function Clientes() {
     if (window.confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
       try {
         setLoading(true);
-        await axios.delete(`${API_URL}/clientes/${id}`);
+        await axios.delete(`/clientes/${id}`);
         setSuccess('Cliente eliminado correctamente');
         setError('');
         await cargarClientes();

@@ -32,10 +32,10 @@ export default function Citas() {
     try {
       setLoading(true);
       const [citasRes, clientesRes, barberosRes, serviciosRes] = await Promise.all([
-        axios.get(`${API_URL}/citas`),
-        axios.get(`${API_URL}/clientes`),
-        axios.get(`${API_URL}/barberos`),
-        axios.get(`${API_URL}/servicios`)
+        axios.get(`/citas`),
+        axios.get(`/clientes`),
+        axios.get(`/barberos`),
+        axios.get(`/servicios`)
       ]);
       
       setCitas(citasRes.data);
@@ -100,7 +100,7 @@ export default function Citas() {
 
     try {
       setLoading(true);
-      await axios.post(`${API_URL}/citas`, formData);
+      await axios.post(`/citas`, formData);
       
       setSuccess('¡Cita registrada exitosamente!');
       setFormData({
@@ -145,7 +145,7 @@ export default function Citas() {
 
     try {
       setLoading(true);
-      await axios.put(`${API_URL}/citas/${editingCita.id}`, {
+      await axios.put(`/citas/${editingCita.id}`, {
         cliente_id: editingCita.cliente_id || null,
         barbero_id: editingCita.barbero_id,
         servicio_id: editingCita.servicio_id,
@@ -171,7 +171,7 @@ export default function Citas() {
     if (window.confirm('¿Estás seguro de que deseas eliminar esta cita?')) {
       try {
         setLoading(true);
-        await axios.delete(`${API_URL}/citas/${id}`);
+        await axios.delete(`/citas/${id}`);
         setSuccess('Cita eliminada correctamente');
         setError('');
         await cargarDatos();
