@@ -25,7 +25,7 @@ export default function Servicios() {
   const cargarServicios = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/servicios`);
+      const res = await axios.get('/servicios');  // ✅ CORRECTO
       setServicios(response.data);
       setError('');
     } catch (err) {

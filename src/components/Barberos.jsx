@@ -28,7 +28,7 @@ export default function Barberos() {
   const cargarBarberos = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/barberos`);
+      const res = await axios.get('/barberos');  // ✅ CORRECTO
       setBarberos(res.data);
       setError('');
     } catch (err) {

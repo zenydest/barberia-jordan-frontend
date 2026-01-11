@@ -26,7 +26,7 @@ export default function Clientes() {
   const cargarClientes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/clientes`);
+      const response = await axios.get('/clientes');
       setClientes(response.data);
       setError('');
     } catch (err) {
