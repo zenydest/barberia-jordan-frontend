@@ -7,7 +7,7 @@ export default function Sidebar({ currentPage, setCurrentPage, usuario }) {
 
   const menuItems = [
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
-    ...(usuario?.rol === 'admin' ? [
+    ...(usuario?.rol === 'administrador' ? [
       { id: 'barberos', label: '💈 Barberos', icon: '💈' },
       { id: 'servicios', label: '✂️ Servicios', icon: '✂️' }
     ] : []),
@@ -34,11 +34,11 @@ export default function Sidebar({ currentPage, setCurrentPage, usuario }) {
         <p className="text-xs text-gray-400">Conectado como:</p>
         <p className="font-semibold text-sm">{usuario?.nombre}</p>
         <span className={`inline-block mt-1 px-2 py-1 rounded text-xs font-bold ${
-          usuario?.rol === 'admin' 
+          usuario?.rol === 'administrador' 
             ? 'bg-red-500 text-white' 
             : 'bg-blue-500 text-white'
         }`}>
-          {usuario?.rol === 'admin' ? '👑 Admin' : '💼 Barbero'}
+          {usuario?.rol === 'administrador' ? '👑 Admin' : '💼 Barbero'}
         </span>
       </div>
 

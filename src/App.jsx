@@ -40,9 +40,9 @@ function AppContent() {
         
         <main className="flex-1">
           {currentPage === 'dashboard' && <Dashboard />}
-          {currentPage === 'barberos' && user?.rol === 'admin' && <Barberos />}
+          {currentPage === 'barberos' && user?.rol === 'administrador' && <Barberos />}
           {currentPage === 'clientes' && <Clientes />}
-          {currentPage === 'servicios' && user?.rol === 'admin' && <Servicios />}
+          {currentPage === 'servicios' && user?.rol === 'administrador' && <Servicios />}
           {currentPage === 'precios' && <Citas />}
           {currentPage === 'reportes' && <Reportes />}
         </main>
