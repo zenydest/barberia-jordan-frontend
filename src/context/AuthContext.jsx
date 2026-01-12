@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(true);
 
   // Configurar el token en axios cuando cambia
   useEffect(() => {
@@ -30,18 +31,32 @@ export function AuthProvider({ children }) {
 
   // Verificar token al cargar
   useEffect(() => {
-    if (token) {
-      verificarToken();
-    }
-  }, [token]);
+    const verificarAlCargar = async () => {
+      if (token) {
+        try {
+          const res = await axiosInstance.get('/auth/me');
+          setUsuario(res.data);
+        } catch (err) {
+          console.error('Token inválido al verificar');
+          // NO hacer logout aquí, solo limpiar
+          localStorage.removeItem('token');
+          setToken(null);
+        }
+      }
+      setIsVerifying(false);
+    };
+
+    verificarAlCargar();
+  }, []); // ← Solo ejecutar al montar
 
   const verificarToken = async () => {
     try {
       const res = await axiosInstance.get('/auth/me');
       setUsuario(res.data);
+      return true;
     } catch (err) {
       console.error('Token inválido');
-      logout();
+      return false;
     }
   };
 
@@ -56,9 +71,10 @@ export function AuthProvider({ children }) {
         rol: 'barbero'
       });
       
-      setToken(res.data.token);
+      const newToken = res.data.token;
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
       setUsuario(res.data.usuario);
-      localStorage.setItem('token', res.data.token);
       
       return res.data;
     } catch (err) {
@@ -80,9 +96,9 @@ export function AuthProvider({ children }) {
       });
       
       const newToken = res.data.token;
-      setToken(newToken);
+      localStorage.setItem('token', newToken); // ← PRIMERO guardar
+      setToken(newToken); // ← DESPUÉS setear
       setUsuario(res.data.usuario);
-      localStorage.setItem('token', newToken);
       
       return res.data;
     } catch (err) {
@@ -100,14 +116,18 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
   };
 
-  // Interceptor de respuesta para manejar 401
+  // Interceptor MEJORADO - solo logout si NO es login/registro
   useEffect(() => {
     const responseInterceptor = axiosInstance.interceptors.response.use(
       (response) => response,
       (error) => {
+        // NO hacer logout si estamos en /auth/login o /auth/registro
         if (error.response?.status === 401) {
-          console.warn('⚠️ 401 Unauthorized - Logout');
-          logout();
+          const config = error.config;
+          if (!config.url?.includes('/auth/login') && !config.url?.includes('/auth/registro')) {
+            console.warn('⚠️ 401 Unauthorized - Logout');
+            logout();
+          }
         }
         return Promise.reject(error);
       }
@@ -117,6 +137,11 @@ export function AuthProvider({ children }) {
       axiosInstance.interceptors.response.eject(responseInterceptor);
     };
   }, []);
+
+  // Mostrar loading mientras se verifica
+  if (isVerifying && token) {
+    return <div>Verificando sesión...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{
@@ -128,7 +153,7 @@ export function AuthProvider({ children }) {
       registro,
       logout,
       isAutenticado: !!token,
-      axios: axiosInstance  // ← Exporta la instancia
+      axios: axiosInstance
     }}>
       {children}
     </AuthContext.Provider>
