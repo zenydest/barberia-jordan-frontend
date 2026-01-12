@@ -25,7 +25,7 @@ export default function Citas() {
 
   useEffect(() => {
     if (!token) return;
-    cargarCitas();
+    cargarDatos();
   }, [token]);
 
 
