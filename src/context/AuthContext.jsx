@@ -1,163 +1,212 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import API_URL from '../config.js';
 
 export const AuthContext = createContext();
 
-// Crear instancia de axios con interceptor
-const axiosInstance = axios.create({
-  baseURL: API_URL
-});
-
 export function AuthProvider({ children }) {
-  const [usuario, setUsuario] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [isVerifying, setIsVerifying] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null);
 
-  // Configurar el token en axios cuando cambia
-  useEffect(() => {
-    if (token) {
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      console.log('✅ Token configurado en axios');
-    } else {
-      delete axiosInstance.defaults.headers.common['Authorization'];
-      delete axios.defaults.headers.common['Authorization'];
-      console.log('❌ Token removido de axios');
-    }
-  }, [token]);
+  // Crear instancia axios independiente
+  const axiosInstance = axios.create({
+    baseURL: 'https://web-production-ae8e1.up.railway.app/api',
+    timeout: 10000
+  });
 
-  // Verificar token al cargar
-  useEffect(() => {
-    const verificarAlCargar = async () => {
-      if (token) {
-        try {
-          const res = await axiosInstance.get('/auth/me');
-          setUsuario(res.data);
-        } catch (err) {
-          console.error('Token inválido al verificar');
-          // NO hacer logout aquí, solo limpiar
-          localStorage.removeItem('token');
-          setToken(null);
-        }
+  // Interceptor para requests - Agrega el token
+  axiosInstance.interceptors.request.use(
+    (config) => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        config.headers.Authorization = `Bearer ${storedToken}`;
+        console.log('✅ Token configurado en axios');
+      } else {
+        console.log('⚠️ No hay token en localStorage');
       }
-      setIsVerifying(false);
+      return config;
+    },
+    (error) => {
+      console.error('Error en request:', error);
+      return Promise.reject(error);
+    }
+  );
+
+  // Interceptor para responses - Maneja 401
+  axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        console.log('⚠️ 401 Unauthorized - Logout');
+        
+        // LIMPIA TODO al recibir 401
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+        setIsAuthenticated(false);
+        
+        // Redirecciona al login
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  // Al cargar la app, verifica si hay token guardado
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        setLoading(true);
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+
+        if (storedToken && storedUser) {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+          setIsAuthenticated(true);
+          console.log('✅ Token encontrado en localStorage');
+          console.log('✅ Usuario restaurado:', JSON.parse(storedUser).email);
+        } else {
+          console.log('⚠️ No hay sesión guardada');
+          setIsAuthenticated(false);
+          setToken(null);
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error al inicializar auth:', error);
+        setIsAuthenticated(false);
+        setToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    verificarAlCargar();
-  }, []); // ← Solo ejecutar al montar
+    initializeAuth();
+  }, []);
 
-  const verificarToken = async () => {
-    try {
-      const res = await axiosInstance.get('/auth/me');
-      setUsuario(res.data);
-      return true;
-    } catch (err) {
-      console.error('Token inválido');
-      return false;
-    }
-  };
-
-  const registro = async (email, password, nombre) => {
-    try {
-      setLoading(true);
-      setError('');
-      const res = await axiosInstance.post('/auth/registro', {
-        email,
-        password,
-        nombre,
-        rol: 'barbero'
-      });
-      
-      const newToken = res.data.token;
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
-      setUsuario(res.data.usuario);
-      
-      return res.data;
-    } catch (err) {
-      const mensaje = err.response?.data?.error || 'Error en el registro';
-      setError(mensaje);
-      throw new Error(mensaje);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Función de LOGIN
   const login = async (email, password) => {
     try {
       setLoading(true);
-      setError('');
-      const res = await axiosInstance.post('/auth/login', {
-        email,
-        password
-      });
       
-      const newToken = res.data.token;
-      localStorage.setItem('token', newToken); // ← PRIMERO guardar
-      setToken(newToken); // ← DESPUÉS setear
-      setUsuario(res.data.usuario);
+      // Primero, LIMPIA cualquier token viejo
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
       
-      return res.data;
-    } catch (err) {
-      const mensaje = err.response?.data?.error || 'Error en el login';
-      setError(mensaje);
-      throw new Error(mensaje);
+      // Espera un bit para que los interceptores se actualicen
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const response = await axiosInstance.post('/auth/login', { email, password });
+      
+      const { token: newToken, user: userData } = response.data;
+      
+      // Guarda el nuevo token y usuario
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      setToken(newToken);
+      setUser(userData);
+      setIsAuthenticated(true);
+      
+      console.log('✅ Login exitoso');
+      console.log('✅ Token verificado para usuario:', userData.email);
+      
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('Error en login:', error);
+      
+      // Limpia en caso de error
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Error en login'
+      };
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    setUsuario(null);
-    setToken(null);
-    localStorage.removeItem('token');
+  // Función de LOGOUT
+  const logout = async () => {
+    try {
+      setLoading(true);
+      
+      // Intenta notificar al backend (opcional)
+      try {
+        await axiosInstance.post('/auth/logout');
+      } catch (err) {
+        console.log('⚠️ No se pudo notificar logout al backend');
+      }
+      
+      // LIMPIA TODO localmente
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      console.log('✅ Logout completado');
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error en logout:', error);
+      
+      // Limpia igual aunque haya error
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      return { success: true }; // Considera logout exitoso de todas formas
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Interceptor MEJORADO - solo logout si NO es login/registro
-  useEffect(() => {
-    const responseInterceptor = axiosInstance.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        // NO hacer logout si estamos en /auth/login o /auth/registro
-        if (error.response?.status === 401) {
-          const config = error.config;
-          if (!config.url?.includes('/auth/login') && !config.url?.includes('/auth/registro')) {
-            console.warn('⚠️ 401 Unauthorized - Logout');
-            logout();
-          }
-        }
-        return Promise.reject(error);
+  // Función para hacer requests autenticadas
+  const request = async (method, endpoint, data = null) => {
+    try {
+      const config = {
+        method,
+        url: endpoint
+      };
+      
+      if (data) {
+        config.data = data;
       }
-    );
+      
+      const response = await axiosInstance(config);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
 
-    return () => {
-      axiosInstance.interceptors.response.eject(responseInterceptor);
-    };
-  }, []);
-
-  // Mostrar loading mientras se verifica
-  if (isVerifying && token) {
-    return <div>Verificando sesión...</div>;
-  }
+  const value = {
+    isAuthenticated,
+    loading,
+    token,
+    user,
+    axios: axiosInstance,
+    login,
+    logout,
+    request
+  };
 
   return (
-    <AuthContext.Provider value={{
-      usuario,
-      token,
-      loading,
-      error,
-      login,
-      registro,
-      logout,
-      isAutenticado: !!token,
-      axios: axiosInstance
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
-
-export default axiosInstance;

@@ -2,8 +2,9 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import logo from '../assets/logo-jordan.png';
 
+
 export default function Login() {
-  const { login, registro, loading, error } = useContext(AuthContext);
+  const { login, loading } = useContext(AuthContext);
   const [isRegistro, setIsRegistro] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -11,6 +12,8 @@ export default function Login() {
     nombre: ''
   });
   const [localError, setLocalError] = useState('');
+  const [localSuccess, setLocalSuccess] = useState('');
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,24 +23,46 @@ export default function Login() {
     }));
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLocalError('');
+    setLocalSuccess('');
+
+    // Validación
+    if (!formData.email.trim()) {
+      setLocalError('El email es requerido');
+      return;
+    }
+
+    if (!formData.password.trim()) {
+      setLocalError('La contraseña es requerida');
+      return;
+    }
 
     try {
       if (isRegistro) {
-        if (!formData.nombre.trim()) {
-          setLocalError('El nombre es requerido');
-          return;
-        }
-        await registro(formData.email, formData.password, formData.nombre);
+        // Por ahora solo login (el registro se hace en el backend)
+        setLocalError('El registro debe hacerse desde el administrador');
+        return;
       } else {
-        await login(formData.email, formData.password);
+        // LOGIN
+        const result = await login(formData.email, formData.password);
+
+        if (result.success) {
+          console.log('✅ Login exitoso');
+          setLocalSuccess('¡Login exitoso! Redirigiendo...');
+          setFormData({ email: '', password: '', nombre: '' });
+          // La redirección se hace automáticamente en AppContent
+        } else {
+          setLocalError(result.error || 'Error en login');
+        }
       }
     } catch (err) {
-      setLocalError(err.message);
+      setLocalError(err.message || 'Error desconocido');
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 flex items-center justify-center p-4">
@@ -51,6 +76,7 @@ export default function Login() {
             <p className="text-gray-400 text-sm mt-2">Sistema de Gestión Digital</p>
           </div>
 
+
           {/* Body */}
           <div className="px-6 py-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">
@@ -62,12 +88,21 @@ export default function Login() {
                 : 'Ingresa tus credenciales'}
             </p>
 
+
             {/* Errores */}
-            {(error || localError) && (
+            {localError && (
               <div className="mb-4 p-3 bg-red-100 border-l-4 border-red-500 text-red-700 text-sm rounded">
-                ❌ {error || localError}
+                ❌ {localError}
               </div>
             )}
+
+            {/* Success */}
+            {localSuccess && (
+              <div className="mb-4 p-3 bg-green-100 border-l-4 border-green-500 text-green-700 text-sm rounded">
+                ✅ {localSuccess}
+              </div>
+            )}
+
 
             {/* Formulario */}
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,9 +119,11 @@ export default function Login() {
                     onChange={handleChange}
                     placeholder="Juan Pérez"
                     className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
+                    disabled={loading}
                   />
                 </div>
               )}
+
 
               {/* Email */}
               <div>
@@ -100,8 +137,10 @@ export default function Login() {
                   onChange={handleChange}
                   placeholder="tu@email.com"
                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
+                  disabled={loading}
                 />
               </div>
+
 
               {/* Contraseña */}
               <div>
@@ -115,8 +154,10 @@ export default function Login() {
                   onChange={handleChange}
                   placeholder="••••••••"
                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
+                  disabled={loading}
                 />
               </div>
+
 
               {/* Botón */}
               <button
@@ -130,6 +171,7 @@ export default function Login() {
               </button>
             </form>
 
+
             {/* Toggle */}
             <p className="text-center text-gray-600 mt-6 text-sm">
               {isRegistro 
@@ -140,9 +182,11 @@ export default function Login() {
                 onClick={() => {
                   setIsRegistro(!isRegistro);
                   setLocalError('');
+                  setLocalSuccess('');
                   setFormData({ email: '', password: '', nombre: '' });
                 }}
                 className="text-yellow-600 font-bold hover:text-yellow-700 transition"
+                disabled={loading}
               >
                 {isRegistro ? 'Inicia Sesión' : 'Regístrate'}
               </button>
