@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 
 
 export default function Clientes() {
-  const { axios } = useContext(AuthContext);
+  const { axios, token } = useContext(AuthContext);
   const [clientes, setClientes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);

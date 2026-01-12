@@ -7,7 +7,7 @@ import logo from '../assets/logo-jordan.png';
 
 
 export default function Reportes() {
-  const { axios } = useContext(AuthContext);
+  const { axios, token } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [barberos, setBarberos] = useState([]);
   const [clientes, setClientes] = useState([]);

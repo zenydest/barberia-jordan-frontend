@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 
 
 export default function Citas() {
-  const { axios } = useContext(AuthContext);
+  const { axios, token } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [barberos, setBarberos] = useState([]);

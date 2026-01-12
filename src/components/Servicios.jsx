@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 
 
 export default function Servicios() {
-  const { axios } = useContext(AuthContext);
+  const { axios, token } = useContext(AuthContext);
   const [servicios, setServicios] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function Servicios() {
     try {
       setLoading(true);
       const res = await axios.get('/servicios');  // ✅ CORRECTO
-      setServicios(response.data);
+      setServicios(res.data);
       setError('');
     } catch (err) {
       setError('Error al cargar servicios');

@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 
 
 export default function Dashboard() {
-  const { axios } = useContext(AuthContext);
+  const { axios, token } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [barberos, setBarberos] = useState([]);

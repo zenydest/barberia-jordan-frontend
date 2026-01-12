@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 
 
 export default function Barberos() {
-  const { axios } = useContext(AuthContext);
+  const { axios, token } = useContext(AuthContext);
   console.log('axios en Barberos:', axios);
   const [barberos, setBarberos] = useState([]);
   const [showForm, setShowForm] = useState(false);
