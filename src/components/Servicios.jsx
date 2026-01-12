@@ -18,8 +18,9 @@ export default function Servicios() {
   });
 
   useEffect(() => {
+    if (!token) return;
     cargarServicios();
-  }, [axios]);
+  }, [token]);
 
   const cargarServicios = async () => {
     try {

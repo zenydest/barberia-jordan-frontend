@@ -24,8 +24,10 @@ export default function Citas() {
   });
 
   useEffect(() => {
-    cargarDatos();
-  }, [axios]);
+    if (!token) return;
+    cargarCitas();
+  }, [token]);
+
 
   const cargarDatos = async () => {
     try {

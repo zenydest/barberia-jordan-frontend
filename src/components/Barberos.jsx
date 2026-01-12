@@ -21,8 +21,9 @@ export default function Barberos() {
   });
 
   useEffect(() => {
+    if (!token) return;
     cargarBarberos();
-  }, [axios]);
+  }, [token]);
 
   const cargarBarberos = async () => {
     try {

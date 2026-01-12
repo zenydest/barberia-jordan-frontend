@@ -19,8 +19,10 @@ export default function Clientes() {
   });
 
   useEffect(() => {
+    if (!token) return;
     cargarClientes();
-  }, [axios]);
+  }, [token]);
+
 
   const cargarClientes = async () => {
     try {

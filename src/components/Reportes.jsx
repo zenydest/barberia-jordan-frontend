@@ -22,8 +22,9 @@ export default function Reportes() {
   });
 
   useEffect(() => {
+    if (!token) return;
     cargarDatos();
-  }, [axios]);
+  }, [token]);
 
   const cargarDatos = async () => {
     try {

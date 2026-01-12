@@ -13,8 +13,9 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!token) return;
     cargarDatos();
-  }, [axios]);
+  }, [token]);
 
   const cargarDatos = async () => {
     try {
