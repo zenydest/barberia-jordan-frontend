@@ -88,53 +88,81 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Función de LOGIN
-  const login = async (email, password) => {
-    try {
-      setLoading(true);
-      
-      // Primero, LIMPIA cualquier token viejo
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
-      
-      // Espera un bit para que los interceptores se actualicen
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const response = await axiosInstance.post('/auth/login', { email, password });
-      
-      const { token: newToken, user: userData } = response.data;
-      
-      // Guarda el nuevo token y usuario
-      localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      setToken(newToken);
-      setUser(userData);
-      setIsAuthenticated(true);
-      
-      console.log('✅ Login exitoso');
-      console.log('✅ Token verificado para usuario:', userData.email);
-      
-      return { success: true, user: userData };
-    } catch (error) {
-      console.error('Error en login:', error);
-      
-      // Limpia en caso de error
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
-      
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Error en login'
-      };
-    } finally {
-      setLoading(false);
+const login = async (email, password) => {
+  try {
+    setLoading(true);
+    
+    // Primero, LIMPIA cualquier token viejo
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    
+    // Espera un bit para que los interceptores se actualicen
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const response = await axiosInstance.post('/auth/login', { email, password });
+    
+    console.log('📦 Respuesta del servidor:', response.data);
+    
+    // Adaptar a diferentes formatos de respuesta
+    let newToken, userData;
+    
+    if (response.data.token && response.data.user) {
+      // Formato: { token: "...", user: {...} }
+      newToken = response.data.token;
+      userData = response.data.user;
+    } else if (response.data.data && response.data.data.token) {
+      // Formato: { data: { token: "...", user: {...} } }
+      newToken = response.data.data.token;
+      userData = response.data.data.user;
+    } else if (response.data.accessToken) {
+      // Formato: { accessToken: "...", user: {...} }
+      newToken = response.data.accessToken;
+      userData = response.data.user;
+    } else {
+      // Intenta usar toda la respuesta como user
+      newToken = response.data.token || 'token_' + Date.now();
+      userData = response.data.user || { email: email, id: response.data.id };
     }
-  };
+    
+    // Validar que tenemos al menos email
+    if (!userData.email) {
+      userData.email = email;
+    }
+    
+    // Guarda el nuevo token y usuario
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    
+    setToken(newToken);
+    setUser(userData);
+    setIsAuthenticated(true);
+    
+    console.log('✅ Login exitoso');
+    console.log('✅ Token verificado para usuario:', userData.email);
+    
+    return { success: true, user: userData };
+  } catch (error) {
+    console.error('Error en login:', error);
+    console.error('Respuesta del servidor:', error.response?.data);
+    
+    // Limpia en caso de error
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
+    
+    return {
+      success: false,
+      error: error.response?.data?.error || error.response?.data?.message || 'Error en login'
+    };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Función de LOGOUT
   const logout = async () => {
