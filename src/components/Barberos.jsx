@@ -21,7 +21,16 @@ export default function Barberos() {
   });
 
   useEffect(() => {
-    if (!token) return;
+    console.log('✅ useEffect Barberos disparado');
+    console.log('📋 Token recibido:', token);
+    console.log('📋 Axios:', axios);
+  
+  if (!token) {
+    console.log('⚠️ ⚠️ Token es NULL o undefined - no se puede cargar');
+    return;
+  }
+  
+    console.log('📞 Llamando cargarBarberos...');
     cargarBarberos();
   }, [token]);
 
