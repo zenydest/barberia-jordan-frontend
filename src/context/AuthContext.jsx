@@ -1,7 +1,9 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+
 export const AuthContext = createContext();
+
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -9,11 +11,13 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
 
+
   // Crear instancia axios independiente
   const axiosInstance = axios.create({
     baseURL: 'https://web-production-ae8e1.up.railway.app/api',
     timeout: 10000
   });
+
 
   // Interceptor para requests - Agrega el token
   axiosInstance.interceptors.request.use(
@@ -32,6 +36,7 @@ export function AuthProvider({ children }) {
       return Promise.reject(error);
     }
   );
+
 
   // Interceptor para responses - Maneja 401
   axiosInstance.interceptors.response.use(
@@ -54,6 +59,7 @@ export function AuthProvider({ children }) {
     }
   );
 
+
   // Al cargar la app, verifica si hay token guardado
   useEffect(() => {
     const initializeAuth = async () => {
@@ -62,12 +68,31 @@ export function AuthProvider({ children }) {
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
 
+
         if (storedToken && storedUser) {
+          // Primero establece el token
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
-          setIsAuthenticated(true);
-          console.log('✅ Token encontrado en localStorage');
-          console.log('✅ Usuario restaurado:', JSON.parse(storedUser).email);
+          
+          // Luego intenta obtener los datos ACTUALES del usuario desde el backend
+          try {
+            const response = await axiosInstance.get('/auth/me', {
+              headers: {
+                'Authorization': `Bearer ${storedToken}`
+              }
+            });
+            
+            console.log('✅ Datos del usuario obtenidos del backend:', response.data);
+            setUser(response.data);
+            localStorage.setItem('user', JSON.stringify(response.data));
+            setIsAuthenticated(true);
+            console.log('✅ Usuario restaurado con rol:', response.data.rol);
+            
+          } catch (error) {
+            // Si falla obtener del backend, usa lo que tiene guardado
+            console.log('⚠️ No se pudo obtener datos del backend, usando datos locales');
+            setUser(JSON.parse(storedUser));
+            setIsAuthenticated(true);
+          }
         } else {
           console.log('⚠️ No hay sesión guardada');
           setIsAuthenticated(false);
@@ -84,84 +109,95 @@ export function AuthProvider({ children }) {
       }
     };
 
+
     initializeAuth();
   }, []);
 
+
   // Función de LOGIN
-const login = async (email, password) => {
-  try {
-    setLoading(true);
-    
-    // Primero, LIMPIA cualquier token viejo
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-    
-    // Espera un bit para que los interceptores se actualicen
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    const response = await axiosInstance.post('/auth/login', { email, password });
-    
-    console.log('📦 Respuesta del servidor:', response.data);
-    
-    // Adaptar a diferentes formatos de respuesta
-    let newToken, userData;
-    
-    if (response.data.token && response.data.user) {
-      // Formato: { token: "...", user: {...} }
-      newToken = response.data.token;
-      userData = response.data.user;
-    } else if (response.data.data && response.data.data.token) {
-      // Formato: { data: { token: "...", user: {...} } }
-      newToken = response.data.data.token;
-      userData = response.data.data.user;
-    } else if (response.data.accessToken) {
-      // Formato: { accessToken: "...", user: {...} }
-      newToken = response.data.accessToken;
-      userData = response.data.user;
-    } else {
-      // Intenta usar toda la respuesta como user
-      newToken = response.data.token || 'token_' + Date.now();
-      userData = response.data.user || { email: email, id: response.data.id };
+  const login = async (email, password) => {
+    try {
+      setLoading(true);
+      
+      // Primero, LIMPIA cualquier token viejo
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+      
+      // Espera un bit para que los interceptores se actualicen
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const response = await axiosInstance.post('/auth/login', { email, password });
+      
+      console.log('📦 Respuesta del servidor:', response.data);
+      
+      // Adaptar a diferentes formatos de respuesta
+      let newToken, userData;
+      
+      if (response.data.token && response.data.usuario) {
+        // Formato: { token: "...", usuario: {...} }
+        newToken = response.data.token;
+        userData = response.data.usuario;
+      } else if (response.data.token && response.data.user) {
+        // Formato: { token: "...", user: {...} }
+        newToken = response.data.token;
+        userData = response.data.user;
+      } else if (response.data.data && response.data.data.token) {
+        // Formato: { data: { token: "...", user: {...} } }
+        newToken = response.data.data.token;
+        userData = response.data.data.user;
+      } else if (response.data.accessToken) {
+        // Formato: { accessToken: "...", user: {...} }
+        newToken = response.data.accessToken;
+        userData = response.data.user;
+      } else {
+        // Intenta usar toda la respuesta como user
+        newToken = response.data.token || 'token_' + Date.now();
+        userData = response.data.user || { email: email, id: response.data.id };
+      }
+      
+      // Validar que tenemos al menos email
+      if (!userData.email) {
+        userData.email = email;
+      }
+      
+      console.log('📋 Datos del usuario guardados:', userData);
+      console.log('🔑 Rol del usuario:', userData.rol);
+      
+      // Guarda el nuevo token y usuario
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      setToken(newToken);
+      setUser(userData);
+      setIsAuthenticated(true);
+      
+      console.log('✅ Login exitoso');
+      console.log('✅ Usuario autenticado como:', userData.email);
+      console.log('✅ Rol:', userData.rol);
+      
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('Error en login:', error);
+      console.error('Respuesta del servidor:', error.response?.data);
+      
+      // Limpia en caso de error
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'Error en login'
+      };
+    } finally {
+      setLoading(false);
     }
-    
-    // Validar que tenemos al menos email
-    if (!userData.email) {
-      userData.email = email;
-    }
-    
-    // Guarda el nuevo token y usuario
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-    
-    setToken(newToken);
-    setUser(userData);
-    setIsAuthenticated(true);
-    
-    console.log('✅ Login exitoso');
-    console.log('✅ Token verificado para usuario:', userData.email);
-    
-    return { success: true, user: userData };
-  } catch (error) {
-    console.error('Error en login:', error);
-    console.error('Respuesta del servidor:', error.response?.data);
-    
-    // Limpia en caso de error
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
-    
-    return {
-      success: false,
-      error: error.response?.data?.error || error.response?.data?.message || 'Error en login'
-    };
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
 
 
   // Función de LOGOUT
@@ -202,6 +238,7 @@ const login = async (email, password) => {
     }
   };
 
+
   // Función para hacer requests autenticadas
   const request = async (method, endpoint, data = null) => {
     try {
@@ -221,6 +258,7 @@ const login = async (email, password) => {
     }
   };
 
+
   const value = {
     isAuthenticated,
     loading,
@@ -231,6 +269,7 @@ const login = async (email, password) => {
     logout,
     request
   };
+
 
   return (
     <AuthContext.Provider value={value}>
