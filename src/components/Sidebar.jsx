@@ -2,12 +2,14 @@ import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import logo from '../assets/logo-jordan.png';
 
+
 export default function Sidebar({ currentPage, setCurrentPage, usuario }) {
   const { logout } = useContext(AuthContext);
 
+
   const menuItems = [
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
-    ...(usuario?.rol === 'administrador' ? [
+    ...(usuario?.rol === 'admin' ? [
       { id: 'barberos', label: '💈 Barberos', icon: '💈' },
       { id: 'servicios', label: '✂️ Servicios', icon: '✂️' }
     ] : []),
@@ -15,6 +17,7 @@ export default function Sidebar({ currentPage, setCurrentPage, usuario }) {
     { id: 'precios', label: '📅 Citas', icon: '📅' },
     { id: 'reportes', label: '📈 Reportes', icon: '📈' }
   ];
+
 
   return (
     <aside className="fixed left-0 top-0 w-64 h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-xl z-50">
@@ -29,18 +32,20 @@ export default function Sidebar({ currentPage, setCurrentPage, usuario }) {
         </div>
       </div>
 
+
       {/* Usuario Info */}
       <div className="px-4 py-4 bg-gray-800 border-b border-gray-700">
         <p className="text-xs text-gray-400">Conectado como:</p>
         <p className="font-semibold text-sm">{usuario?.nombre}</p>
         <span className={`inline-block mt-1 px-2 py-1 rounded text-xs font-bold ${
-          usuario?.rol === 'administrador' 
+          usuario?.rol === 'admin' 
             ? 'bg-red-500 text-white' 
             : 'bg-blue-500 text-white'
         }`}>
-          {usuario?.rol === 'administrador' ? '👑 Admin' : '💼 Barbero'}
+          {usuario?.rol === 'admin' ? '👑 Admin' : '💼 Barbero'}
         </span>
       </div>
+
 
       {/* Menu */}
       <nav className="mt-4 space-y-2 px-3">
@@ -58,6 +63,7 @@ export default function Sidebar({ currentPage, setCurrentPage, usuario }) {
           </button>
         ))}
       </nav>
+
 
       {/* Logout */}
       <div className="absolute bottom-6 left-3 right-3">
