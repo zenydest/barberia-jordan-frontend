@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }) => {
     
     if (savedToken) {
       console.log('✅ Token encontrado:', savedToken.substring(0, 20) + '...');
-      setToken(savedToken);
       verifyToken(savedToken);
     } else {
       console.log('❌ No hay token en localStorage');
@@ -32,7 +31,6 @@ export const AuthProvider = ({ children }) => {
       console.log('🔐 Verificando token con el backend...');
       const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${tokenToVerify}`
         }
       });
@@ -42,7 +40,7 @@ export const AuthProvider = ({ children }) => {
       setToken(tokenToVerify);
       setError('');
     } catch (err) {
-      console.error('❌ Token inválido o expirado:', err.message);
+      console.error('❌ Token inválido o expirado:', err.response?.data?.error || err.message);
       localStorage.removeItem('token');
       setToken(null);
       setUser(null);
@@ -62,10 +60,6 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
 
       console.log('✅ Login exitoso:', response.data);
@@ -75,6 +69,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(response.data.usuario);
+      setError('');
       
       return { success: true, data: response.data };
     } catch (err) {
@@ -83,6 +78,7 @@ export const AuthProvider = ({ children }) => {
       setError(errorMsg);
       setToken(null);
       setUser(null);
+      localStorage.removeItem('token');
       return { success: false, error: errorMsg };
     } finally {
       setAuthLoading(false);
@@ -109,10 +105,6 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
         nombre
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
 
       console.log('✅ Signup exitoso:', response.data);
@@ -122,6 +114,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(response.data.usuario);
+      setError('');
       
       return { success: true, data: response.data };
     } catch (err) {
@@ -130,6 +123,7 @@ export const AuthProvider = ({ children }) => {
       setError(errorMsg);
       setToken(null);
       setUser(null);
+      localStorage.removeItem('token');
       return { success: false, error: errorMsg };
     } finally {
       setAuthLoading(false);

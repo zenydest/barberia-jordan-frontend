@@ -16,7 +16,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!user) {
-    return null; // No renderiza nada si no está autenticado
+    return null;
   }
 
   return children;
