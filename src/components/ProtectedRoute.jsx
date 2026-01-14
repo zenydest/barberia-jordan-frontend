@@ -1,8 +1,10 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
+
 export default function ProtectedRoute({ children }) {
   const { user, authLoading } = useContext(AuthContext);
+
 
   if (authLoading) {
     return (
@@ -15,9 +17,11 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
+
   if (!user) {
     return null;
   }
+
 
   return children;
 }

@@ -1,7 +1,9 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+
 export const AuthContext = createContext();
+
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -9,7 +11,18 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [error, setError] = useState('');
 
+
   const API_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-backend.up.railway.app';
+
+
+  // Configurar axios con interceptores
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axios.defaults.baseURL = API_URL;
+    }
+  }, [token, API_URL]);
+
 
   // Al montar, recuperar token del localStorage
   useEffect(() => {
@@ -25,6 +38,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+
   // Verificar si el token es válido
   const verifyToken = async (tokenToVerify) => {
     try {
@@ -34,6 +48,7 @@ export const AuthProvider = ({ children }) => {
           'Authorization': `Bearer ${tokenToVerify}`
         }
       });
+
 
       console.log('✅ Token válido. Usuario:', response.data);
       setUser(response.data);
@@ -50,6 +65,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
   // Login
   const login = async (email, password) => {
     try {
@@ -57,10 +73,12 @@ export const AuthProvider = ({ children }) => {
       setError('');
       console.log('📝 Intentando login con:', email);
 
+
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password
       });
+
 
       console.log('✅ Login exitoso:', response.data);
       const newToken = response.data.token;
@@ -85,6 +103,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
   // Logout
   const logout = () => {
     console.log('🚪 Logout');
@@ -92,7 +111,9 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setError('');
+    delete axios.defaults.headers.common['Authorization'];
   };
+
 
   // Signup
   const signup = async (email, password, nombre) => {
@@ -101,11 +122,13 @@ export const AuthProvider = ({ children }) => {
       setError('');
       console.log('📝 Intentando signup con:', email);
 
+
       const response = await axios.post(`${API_URL}/api/auth/registro`, {
         email,
         password,
         nombre
       });
+
 
       console.log('✅ Signup exitoso:', response.data);
       const newToken = response.data.token;
@@ -130,6 +153,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
   const value = {
     user,
     token,
@@ -138,8 +162,11 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     signup,
-    setError
+    setError,
+    isAuthenticated: !!user && !!token,
+    axios
   };
+
 
   return (
     <AuthContext.Provider value={value}>

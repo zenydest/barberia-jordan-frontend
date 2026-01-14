@@ -11,12 +11,14 @@ import Citas from './components/Citas';
 import Reportes from './components/Reportes';
 
 
+
 function AppContent() {
-  const { isAuthenticated, user, loading } = useContext(AuthContext);
+  const { isAuthenticated, user, authLoading } = useContext(AuthContext);
   const [currentPage, setCurrentPage] = React.useState('dashboard');
 
+
   // Mientras carga la sesión
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white to-yellow-50">
         <div className="text-center">
@@ -27,10 +29,12 @@ function AppContent() {
     );
   }
 
+
   // Si no está autenticado, muestra login
   if (!isAuthenticated) {
     return <Login />;
   }
+
 
   // Si está autenticado, muestra el dashboard
   return (
@@ -40,9 +44,9 @@ function AppContent() {
         
         <main className="flex-1">
           {currentPage === 'dashboard' && <Dashboard />}
-          {currentPage === 'barberos' && user?.rol === 'administrador' && <Barberos />}
+          {currentPage === 'barberos' && user?.rol === 'admin' && <Barberos />}
           {currentPage === 'clientes' && <Clientes />}
-          {currentPage === 'servicios' && user?.rol === 'administrador' && <Servicios />}
+          {currentPage === 'servicios' && user?.rol === 'admin' && <Servicios />}
           {currentPage === 'precios' && <Citas />}
           {currentPage === 'reportes' && <Reportes />}
         </main>
@@ -50,6 +54,7 @@ function AppContent() {
     </ProtectedRoute>
   );
 }
+
 
 
 export default function App() {

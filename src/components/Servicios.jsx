@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
+
 export default function Servicios() {
-  const { axios, token, loading: authLoading } = useContext(AuthContext);
+  const { axios, token, authLoading } = useContext(AuthContext);
   const [servicios, setServicios] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,10 +17,12 @@ export default function Servicios() {
     descripcion: ''
   });
 
+
   useEffect(() => {
     if (authLoading) {
       return;
     }
+
 
     if (!token) {
       return;
@@ -28,10 +31,11 @@ export default function Servicios() {
     cargarServicios();
   }, [token, authLoading]);
 
+
   const cargarServicios = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/servicios');
+      const res = await axios.get('/api/servicios');
       setServicios(res.data);
       setError('');
     } catch (err) {
@@ -42,6 +46,7 @@ export default function Servicios() {
     }
   };
 
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -49,6 +54,7 @@ export default function Servicios() {
       [name]: name === 'precio' ? (value === '' ? '' : Number(value)) : value
     }));
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,14 +68,15 @@ export default function Servicios() {
       return;
     }
 
+
     try {
       setLoading(true);
       
       if (editingId) {
-        await axios.put(`/servicios/${editingId}`, formData);
+        await axios.put(`/api/servicios/${editingId}`, formData);
         setSuccess('¡Servicio actualizado exitosamente!');
       } else {
-        await axios.post(`/servicios`, formData);
+        await axios.post(`/api/servicios`, formData);
         setSuccess('¡Servicio creado exitosamente!');
       }
       
@@ -91,6 +98,7 @@ export default function Servicios() {
     }
   };
 
+
   const handleEditar = (servicio) => {
     setFormData({
       nombre: servicio.nombre,
@@ -101,6 +109,7 @@ export default function Servicios() {
     setShowForm(true);
     setError('');
   };
+
 
   const handleCancelar = () => {
     setFormData({
@@ -113,11 +122,12 @@ export default function Servicios() {
     setError('');
   };
 
+
   const handleEliminar = async (id) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este servicio?')) {
       try {
         setLoading(true);
-        await axios.delete(`/servicios/${id}`);
+        await axios.delete(`/api/servicios/${id}`);
         setSuccess('Servicio eliminado correctamente');
         setError('');
         await cargarServicios();
@@ -130,6 +140,7 @@ export default function Servicios() {
       }
     }
   };
+
 
   return (
     <main className="ml-64 mt-16 p-8 bg-gradient-to-br from-white to-yellow-50 min-h-screen">
@@ -153,6 +164,7 @@ export default function Servicios() {
         </button>
       </div>
 
+
       {success && (
         <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
           ✅ {success}
@@ -163,6 +175,7 @@ export default function Servicios() {
           ❌ {error}
         </div>
       )}
+
 
       {showForm && (
         <div className="bg-white rounded-lg shadow-md p-8 mb-8 border-t-4 border-yellow-300">
@@ -185,6 +198,7 @@ export default function Servicios() {
               />
             </div>
 
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Precio ($) <span className="text-red-500">*</span>
@@ -201,6 +215,7 @@ export default function Servicios() {
               />
             </div>
 
+
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Descripción
@@ -215,6 +230,7 @@ export default function Servicios() {
               />
             </div>
 
+
             <div className="md:col-span-2">
               <button
                 type="submit"
@@ -228,10 +244,12 @@ export default function Servicios() {
         </div>
       )}
 
+
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
         <h3 className="text-lg font-bold text-gray-800 mb-4">
           Lista de Servicios ({servicios.length})
         </h3>
+
 
         {authLoading ? (
           <div className="text-center py-8 text-gray-500">⏳ Inicializando sesión...</div>
