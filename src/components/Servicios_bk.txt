@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
+
 export default function Servicios() {
-  const { axios, token, loading: authLoading } = useContext(AuthContext);
+  const { axios, token } = useContext(AuthContext);
   const [servicios, setServicios] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,38 +17,29 @@ export default function Servicios() {
     descripcion: ''
   });
 
-  // 🔧 FIX: Espera a que authLoading sea false ANTES de cargar
   useEffect(() => {
     console.log('✅ useEffect Servicios disparado');
     console.log('📋 Token recibido:', token);
-    console.log('📋 AuthLoading:', authLoading);
     console.log('📋 Axios:', axios);
   
-    if (authLoading) {
-      console.log('⏳ Esperando a que AuthContext se inicialice...');
-      return;
-    }
-
-    if (!token) {
-      console.log('⚠️ Token es NULL o undefined - no se puede cargar');
-      return;
-    }
-    
+  if (!token) {
+    console.log('⚠️ ⚠️ Token es NULL o undefined - no se puede cargar');
+    return;
+  }
+  
     console.log('📞 Llamando cargarServicios...');
     cargarServicios();
-  }, [token, authLoading]);
+  }, [token]);
 
   const cargarServicios = async () => {
     try {
       setLoading(true);
-      console.log('🌐 Realizando GET /servicios...');
-      const res = await axios.get('/servicios');
-      console.log('✅ Respuesta recibida:', res.data);
+      const res = await axios.get('/servicios');  // ✅ CORRECTO
       setServicios(res.data);
       setError('');
     } catch (err) {
       setError('Error al cargar servicios');
-      console.error('❌ Error:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -144,6 +136,7 @@ export default function Servicios() {
 
   return (
     <main className="ml-64 mt-16 p-8 bg-gradient-to-br from-white to-yellow-50 min-h-screen">
+      {/* Título */}
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">✂️ Servicios</h2>
@@ -164,6 +157,7 @@ export default function Servicios() {
         </button>
       </div>
 
+      {/* Mensajes */}
       {success && (
         <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
           ✅ {success}
@@ -175,6 +169,7 @@ export default function Servicios() {
         </div>
       )}
 
+      {/* Formulario */}
       {showForm && (
         <div className="bg-white rounded-lg shadow-md p-8 mb-8 border-t-4 border-yellow-300">
           <h3 className="text-2xl font-bold text-gray-800 mb-6">
@@ -182,6 +177,7 @@ export default function Servicios() {
           </h3>
           
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Nombre */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Nombre del Servicio <span className="text-red-500">*</span>
@@ -196,6 +192,7 @@ export default function Servicios() {
               />
             </div>
 
+            {/* Precio */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Precio ($) <span className="text-red-500">*</span>
@@ -212,6 +209,7 @@ export default function Servicios() {
               />
             </div>
 
+            {/* Descripción */}
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Descripción
@@ -226,6 +224,7 @@ export default function Servicios() {
               />
             </div>
 
+            {/* Botón */}
             <div className="md:col-span-2">
               <button
                 type="submit"
@@ -239,14 +238,13 @@ export default function Servicios() {
         </div>
       )}
 
+      {/* Tabla de servicios */}
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
         <h3 className="text-lg font-bold text-gray-800 mb-4">
           Lista de Servicios ({servicios.length})
         </h3>
 
-        {authLoading ? (
-          <div className="text-center py-8 text-gray-500">⏳ Inicializando sesión...</div>
-        ) : loading && !showForm ? (
+        {loading && !showForm ? (
           <div className="text-center py-8 text-gray-500">⏳ Cargando...</div>
         ) : servicios.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
