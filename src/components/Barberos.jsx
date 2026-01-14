@@ -18,17 +18,25 @@ export default function Barberos() {
     comision: 20.0
   });
 
-  useEffect(() => {
-    if (authLoading) {
-      return;
-    }
+// ✅ MEJORADO: Espera a que la auth esté lista
+useEffect(() => {
+  console.log('📊 useEffect Barberos:', { authLoading, token, barberos: barberos.length });
+  
+  if (authLoading) {
+    console.log('⏳ Esperando a que termine de cargar la sesión...');
+    return;
+  }
 
-    if (!token) {
-      return;
-    }
-    
+  if (!token) {
+    console.log('❌ No hay token disponible');
+    return;
+  }
+  
+  if (barberos.length === 0) {
+    console.log('📥 Cargando barberos...');
     cargarBarberos();
-  }, [token, authLoading]);
+  }
+}, [authLoading, token]); // ✅ NO incluir barberos en dependencias
 
   const cargarBarberos = async () => {
     try {
