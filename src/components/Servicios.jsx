@@ -16,33 +16,22 @@ export default function Servicios() {
     descripcion: ''
   });
 
-  // 🔧 FIX: Espera a que authLoading sea false ANTES de cargar
   useEffect(() => {
-    console.log('✅ useEffect Servicios disparado');
-    console.log('📋 Token recibido:', token);
-    console.log('📋 AuthLoading:', authLoading);
-    console.log('📋 Axios:', axios);
-  
     if (authLoading) {
-      console.log('⏳ Esperando a que AuthContext se inicialice...');
       return;
     }
 
     if (!token) {
-      console.log('⚠️ Token es NULL o undefined - no se puede cargar');
       return;
     }
     
-    console.log('📞 Llamando cargarServicios...');
     cargarServicios();
   }, [token, authLoading]);
 
   const cargarServicios = async () => {
     try {
       setLoading(true);
-      console.log('🌐 Realizando GET /servicios...');
       const res = await axios.get('/servicios');
-      console.log('✅ Respuesta recibida:', res.data);
       setServicios(res.data);
       setError('');
     } catch (err) {

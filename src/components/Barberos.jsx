@@ -3,7 +3,6 @@ import { AuthContext } from '../context/AuthContext';
 
 export default function Barberos() {
   const { axios, token, loading: authLoading } = useContext(AuthContext);
-  console.log('axios en Barberos:', axios);
   const [barberos, setBarberos] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -19,33 +18,22 @@ export default function Barberos() {
     comision: 20.0
   });
 
-  // 🔧 FIX: Espera a que authLoading sea false ANTES de cargar
   useEffect(() => {
-    console.log('✅ useEffect Barberos disparado');
-    console.log('📋 Token recibido:', token);
-    console.log('📋 AuthLoading:', authLoading);
-    console.log('📋 Axios:', axios);
-  
     if (authLoading) {
-      console.log('⏳ Esperando a que AuthContext se inicialice...');
       return;
     }
 
     if (!token) {
-      console.log('⚠️ Token es NULL o undefined - no se puede cargar');
       return;
     }
     
-    console.log('📞 Llamando cargarBarberos...');
     cargarBarberos();
   }, [token, authLoading]);
 
   const cargarBarberos = async () => {
     try {
       setLoading(true);
-      console.log('🌐 Realizando GET /barberos...');
       const res = await axios.get('/barberos');
-      console.log('✅ Respuesta recibida:', res.data);
       setBarberos(res.data);
       setError('');
     } catch (err) {
@@ -254,7 +242,6 @@ export default function Barberos() {
                 />
                 <span className="absolute right-4 top-3 text-gray-600 font-semibold">%</span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Ej: 20% de cada cita</p>
             </div>
 
             <div className="md:col-span-2">
