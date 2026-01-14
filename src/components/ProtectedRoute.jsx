@@ -2,9 +2,9 @@ import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useContext(AuthContext);
+  const { user, authLoading } = useContext(AuthContext);
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white to-yellow-50">
         <div className="text-center">
@@ -15,7 +15,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null; // No renderiza nada si no está autenticado
   }
 
