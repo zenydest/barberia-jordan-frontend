@@ -15,55 +15,49 @@ export const AuthProvider = ({ children }) => {
   const API_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-backend.up.railway.app';
 
 
-  // Configurar axios con interceptores
+  // Al montar, recuperar token del localStorage ANTES de cualquier cosa
   useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      axios.defaults.baseURL = API_URL;
-    }
-  }, [token, API_URL]);
-
-
-  // Al montar, recuperar token del localStorage
-  useEffect(() => {
-    console.log('🔍 Verificando token en localStorage...');
-    const savedToken = localStorage.getItem('token');
-    
-    if (savedToken) {
-      console.log('✅ Token encontrado:', savedToken.substring(0, 20) + '...');
-      verifyToken(savedToken);
-    } else {
-      console.log('❌ No hay token en localStorage');
-      setAuthLoading(false);
-    }
-  }, []);
-
-
-  // Verificar si el token es válido
-  const verifyToken = async (tokenToVerify) => {
-    try {
-      console.log('🔐 Verificando token con el backend...');
-      const response = await axios.get(`${API_URL}/api/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${tokenToVerify}`
+    const initializeAuth = async () => {
+      try {
+        console.log('🔍 Verificando token en localStorage...');
+        const savedToken = localStorage.getItem('token');
+        
+        if (savedToken) {
+          console.log('✅ Token encontrado:', savedToken.substring(0, 20) + '...');
+          
+          // Configurar axios con el token
+          axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+          axios.defaults.baseURL = API_URL;
+          
+          // Verificar token con el backend
+          const response = await axios.get(`${API_URL}/api/auth/me`, {
+            headers: {
+              'Authorization': `Bearer ${savedToken}`
+            }
+          });
+          
+          console.log('✅ Token válido. Usuario:', response.data);
+          setUser(response.data);
+          setToken(savedToken);
+          setError('');
+        } else {
+          console.log('❌ No hay token en localStorage');
+          setUser(null);
+          setToken(null);
         }
-      });
+      } catch (err) {
+        console.error('❌ Error verificando token:', err.message);
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+        setError('Token expirado. Por favor inicia sesión nuevamente.');
+      } finally {
+        setAuthLoading(false);
+      }
+    };
 
-
-      console.log('✅ Token válido. Usuario:', response.data);
-      setUser(response.data);
-      setToken(tokenToVerify);
-      setError('');
-    } catch (err) {
-      console.error('❌ Token inválido o expirado:', err.response?.data?.error || err.message);
-      localStorage.removeItem('token');
-      setToken(null);
-      setUser(null);
-      setError('Token expirado. Por favor inicia sesión nuevamente.');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
+    initializeAuth();
+  }, []);
 
 
   // Login
@@ -73,18 +67,21 @@ export const AuthProvider = ({ children }) => {
       setError('');
       console.log('📝 Intentando login con:', email);
 
-
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password
       });
-
 
       console.log('✅ Login exitoso:', response.data);
       const newToken = response.data.token;
       
       // Guardar token en localStorage
       localStorage.setItem('token', newToken);
+      
+      // Configurar axios headers
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      axios.defaults.baseURL = API_URL;
+      
       setToken(newToken);
       setUser(response.data.usuario);
       setError('');
@@ -108,10 +105,10 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     console.log('🚪 Logout');
     localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
     setError('');
-    delete axios.defaults.headers.common['Authorization'];
   };
 
 
@@ -122,19 +119,22 @@ export const AuthProvider = ({ children }) => {
       setError('');
       console.log('📝 Intentando signup con:', email);
 
-
       const response = await axios.post(`${API_URL}/api/auth/registro`, {
         email,
         password,
         nombre
       });
 
-
       console.log('✅ Signup exitoso:', response.data);
       const newToken = response.data.token;
       
       // Guardar token en localStorage
       localStorage.setItem('token', newToken);
+      
+      // Configurar axios headers
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      axios.defaults.baseURL = API_URL;
+      
       setToken(newToken);
       setUser(response.data.usuario);
       setError('');
