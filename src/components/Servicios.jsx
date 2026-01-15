@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
 
+
 export default function Servicios() {
-  const { axios, token, authLoading } = useContext(AuthContext);
+  const { token, authLoading } = useContext(AuthContext);
   const [servicios, setServicios] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,12 +19,19 @@ export default function Servicios() {
     descripcion: ''
   });
 
+  const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app';
+
+  // Crear headers con token
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  });
+
 
   useEffect(() => {
     if (authLoading) {
       return;
     }
-
 
     if (!token) {
       return;
@@ -32,19 +41,32 @@ export default function Servicios() {
   }, [token, authLoading]);
 
 
+
   const cargarServicios = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/servicios');
-      setServicios(res.data);
+      const res = await axios.get(`${API_URL}/api/servicios`, {
+        headers: getHeaders()
+      });
+      
+      // Validar que sea un array
+      if (Array.isArray(res.data)) {
+        setServicios(res.data);
+      } else {
+        console.error('❌ La respuesta no es un array:', res.data);
+        setError('Error: respuesta inválida del servidor');
+        setServicios([]);
+      }
       setError('');
     } catch (err) {
       setError('Error al cargar servicios');
       console.error('❌ Error:', err);
+      setServicios([]);
     } finally {
       setLoading(false);
     }
   };
+
 
 
   const handleInputChange = (e) => {
@@ -54,6 +76,7 @@ export default function Servicios() {
       [name]: name === 'precio' ? (value === '' ? '' : Number(value)) : value
     }));
   };
+
 
 
   const handleSubmit = async (e) => {
@@ -68,15 +91,18 @@ export default function Servicios() {
       return;
     }
 
-
     try {
       setLoading(true);
       
       if (editingId) {
-        await axios.put(`/api/servicios/${editingId}`, formData);
+        await axios.put(`${API_URL}/api/servicios/${editingId}`, formData, {
+          headers: getHeaders()
+        });
         setSuccess('¡Servicio actualizado exitosamente!');
       } else {
-        await axios.post(`/api/servicios`, formData);
+        await axios.post(`${API_URL}/api/servicios`, formData, {
+          headers: getHeaders()
+        });
         setSuccess('¡Servicio creado exitosamente!');
       }
       
@@ -99,6 +125,7 @@ export default function Servicios() {
   };
 
 
+
   const handleEditar = (servicio) => {
     setFormData({
       nombre: servicio.nombre,
@@ -109,6 +136,7 @@ export default function Servicios() {
     setShowForm(true);
     setError('');
   };
+
 
 
   const handleCancelar = () => {
@@ -123,11 +151,14 @@ export default function Servicios() {
   };
 
 
+
   const handleEliminar = async (id) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este servicio?')) {
       try {
         setLoading(true);
-        await axios.delete(`/api/servicios/${id}`);
+        await axios.delete(`${API_URL}/api/servicios/${id}`, {
+          headers: getHeaders()
+        });
         setSuccess('Servicio eliminado correctamente');
         setError('');
         await cargarServicios();
@@ -140,6 +171,7 @@ export default function Servicios() {
       }
     }
   };
+
 
 
   return (
@@ -165,6 +197,7 @@ export default function Servicios() {
       </div>
 
 
+
       {success && (
         <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
           ✅ {success}
@@ -175,6 +208,7 @@ export default function Servicios() {
           ❌ {error}
         </div>
       )}
+
 
 
       {showForm && (
@@ -199,6 +233,7 @@ export default function Servicios() {
             </div>
 
 
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Precio ($) <span className="text-red-500">*</span>
@@ -216,6 +251,7 @@ export default function Servicios() {
             </div>
 
 
+
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Descripción
@@ -229,6 +265,7 @@ export default function Servicios() {
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
               />
             </div>
+
 
 
             <div className="md:col-span-2">
@@ -245,10 +282,12 @@ export default function Servicios() {
       )}
 
 
+
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
         <h3 className="text-lg font-bold text-gray-800 mb-4">
           Lista de Servicios ({servicios.length})
         </h3>
+
 
 
         {authLoading ? (

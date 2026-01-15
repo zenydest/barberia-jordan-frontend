@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
 
+
 export default function Citas() {
-  const { axios, token } = useContext(AuthContext);
+  const { token, authLoading } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [barberos, setBarberos] = useState([]);
@@ -23,34 +25,57 @@ export default function Citas() {
     notas: ''
   });
 
+  const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app';
+
+  // Crear headers con token
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  });
+
+
   useEffect(() => {
-    if (!token) return;
+    if (authLoading) {
+      return;
+    }
+
+    if (!token) {
+      return;
+    }
+    
     cargarDatos();
-  }, [token]);
+  }, [token, authLoading]);
+
 
 
   const cargarDatos = async () => {
     try {
       setLoading(true);
       const [citasRes, clientesRes, barberosRes, serviciosRes] = await Promise.all([
-        axios.get(`/citas`),
-        axios.get(`/clientes`),
-        axios.get(`/barberos`),
-        axios.get(`/servicios`)
+        axios.get(`${API_URL}/api/citas`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/api/clientes`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/api/barberos`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/api/servicios`, { headers: getHeaders() })
       ]);
       
-      setCitas(citasRes.data);
-      setClientes(clientesRes.data);
-      setBarberos(barberosRes.data);
-      setServicios(serviciosRes.data);
+      // Validar que sean arrays
+      setCitas(Array.isArray(citasRes.data) ? citasRes.data : []);
+      setClientes(Array.isArray(clientesRes.data) ? clientesRes.data : []);
+      setBarberos(Array.isArray(barberosRes.data) ? barberosRes.data : []);
+      setServicios(Array.isArray(serviciosRes.data) ? serviciosRes.data : []);
       setError('');
     } catch (err) {
       setError('Error al cargar datos');
       console.error(err);
+      setCitas([]);
+      setClientes([]);
+      setBarberos([]);
+      setServicios([]);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -58,6 +83,7 @@ export default function Citas() {
       ...prev,
       [name]: name === 'precio' ? (value === '' ? '' : Number(value)) : value
     }));
+
 
     // Actualizar precio automáticamente
     if (name === 'servicio_id' && value) {
@@ -71,12 +97,14 @@ export default function Citas() {
     }
   };
 
+
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditingCita(prev => ({
       ...prev,
       [name]: name === 'precio' ? (value === '' ? '' : Number(value)) : value
     }));
+
 
     // Actualizar precio automáticamente en edición
     if (name === 'servicio_id' && value) {
@@ -90,6 +118,7 @@ export default function Citas() {
     }
   };
 
+
   // Crear cita
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -99,9 +128,12 @@ export default function Citas() {
       return;
     }
 
+
     try {
       setLoading(true);
-      await axios.post(`/citas`, formData);
+      await axios.post(`${API_URL}/api/citas`, formData, {
+        headers: getHeaders()
+      });
       
       setSuccess('¡Cita registrada exitosamente!');
       setFormData({
@@ -123,6 +155,7 @@ export default function Citas() {
     }
   };
 
+
   // Editar cita
   const handleEdit = (cita) => {
     setEditingCita({
@@ -136,22 +169,27 @@ export default function Citas() {
     setShowEditModal(true);
   };
 
+
   const handleSaveEdit = async (e) => {
     e.preventDefault();
+
 
     if (!editingCita.barbero_id || !editingCita.servicio_id) {
       setError('Barbero y Servicio son requeridos');
       return;
     }
 
+
     try {
       setLoading(true);
-      await axios.put(`/citas/${editingCita.id}`, {
+      await axios.put(`${API_URL}/api/citas/${editingCita.id}`, {
         cliente_id: editingCita.cliente_id || null,
         barbero_id: editingCita.barbero_id,
         servicio_id: editingCita.servicio_id,
         precio: editingCita.precio,
         notas: editingCita.notas
+      }, {
+        headers: getHeaders()
       });
       
       setSuccess('¡Cita actualizada exitosamente!');
@@ -168,11 +206,14 @@ export default function Citas() {
     }
   };
 
+
   const handleEliminar = async (id) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar esta cita?')) {
       try {
         setLoading(true);
-        await axios.delete(`/citas/${id}`);
+        await axios.delete(`${API_URL}/api/citas/${id}`, {
+          headers: getHeaders()
+        });
         setSuccess('Cita eliminada correctamente');
         setError('');
         await cargarDatos();
@@ -185,6 +226,7 @@ export default function Citas() {
       }
     }
   };
+
 
   return (
     <main className="ml-64 mt-16 p-8 bg-gradient-to-br from-white to-yellow-50 min-h-screen">
@@ -202,6 +244,7 @@ export default function Citas() {
         </button>
       </div>
 
+
       {/* Mensajes */}
       {success && (
         <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
@@ -213,6 +256,7 @@ export default function Citas() {
           ❌ {error}
         </div>
       )}
+
 
       {/* Formulario Crear */}
       {showForm && (
@@ -240,6 +284,7 @@ export default function Citas() {
               </select>
             </div>
 
+
             {/* Barbero - OBLIGATORIO */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -259,6 +304,7 @@ export default function Citas() {
                 ))}
               </select>
             </div>
+
 
             {/* Servicio - OBLIGATORIO */}
             <div>
@@ -280,6 +326,7 @@ export default function Citas() {
               </select>
             </div>
 
+
             {/* Precio */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -298,6 +345,7 @@ export default function Citas() {
               />
             </div>
 
+
             {/* Notas */}
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -313,6 +361,7 @@ export default function Citas() {
               />
             </div>
 
+
             {/* Botón */}
             <div className="md:col-span-2">
               <button
@@ -326,6 +375,7 @@ export default function Citas() {
           </form>
         </div>
       )}
+
 
       {/* Modal Editar */}
       {showEditModal && editingCita && (
@@ -343,6 +393,7 @@ export default function Citas() {
                 ✕
               </button>
             </div>
+
 
             <form onSubmit={handleSaveEdit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Cliente */}
@@ -365,6 +416,7 @@ export default function Citas() {
                 </select>
               </div>
 
+
               {/* Barbero */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -383,6 +435,7 @@ export default function Citas() {
                   ))}
                 </select>
               </div>
+
 
               {/* Servicio */}
               <div>
@@ -403,6 +456,7 @@ export default function Citas() {
                 </select>
               </div>
 
+
               {/* Precio */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -419,6 +473,7 @@ export default function Citas() {
                 />
               </div>
 
+
               {/* Notas */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -432,6 +487,7 @@ export default function Citas() {
                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-300 transition"
                 />
               </div>
+
 
               {/* Botones */}
               <div className="md:col-span-2 flex gap-4">
@@ -458,11 +514,13 @@ export default function Citas() {
         </div>
       )}
 
+
       {/* Tabla de citas */}
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
         <h3 className="text-lg font-bold text-gray-800 mb-4">
           Últimas Citas ({citas.length})
         </h3>
+
 
         {loading && !showForm ? (
           <div className="text-center py-8 text-gray-500">⏳ Cargando...</div>

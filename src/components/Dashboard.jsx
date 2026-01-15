@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { AuthContext } from '../context/AuthContext';
 
 
+
 export default function Dashboard() {
-  const { axios, token } = useContext(AuthContext);
+  const { token, authLoading } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [barberos, setBarberos] = useState([]);
@@ -12,33 +14,56 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app';
+
+  // Crear headers con token
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  });
+
+
   useEffect(() => {
-    if (!token) return;
+    if (authLoading) {
+      return;
+    }
+
+    if (!token) {
+      return;
+    }
+    
     cargarDatos();
-  }, [token]);
+  }, [token, authLoading]);
+
 
   const cargarDatos = async () => {
     try {
       setLoading(true);
       const [citasRes, clientesRes, barberosRes, serviciosRes] = await Promise.all([
-        axios.get(`/citas`),
-        axios.get(`/clientes`),
-        axios.get(`/barberos`),
-        axios.get(`/servicios`)
+        axios.get(`${API_URL}/api/citas`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/api/clientes`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/api/barberos`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/api/servicios`, { headers: getHeaders() })
       ]);
       
-      setCitas(citasRes.data);
-      setClientes(clientesRes.data);
-      setBarberos(barberosRes.data);
-      setServicios(serviciosRes.data);
+      // Validar que sean arrays
+      setCitas(Array.isArray(citasRes.data) ? citasRes.data : []);
+      setClientes(Array.isArray(clientesRes.data) ? clientesRes.data : []);
+      setBarberos(Array.isArray(barberosRes.data) ? barberosRes.data : []);
+      setServicios(Array.isArray(serviciosRes.data) ? serviciosRes.data : []);
       setError('');
     } catch (err) {
       setError('Error al cargar datos');
       console.error(err);
+      setCitas([]);
+      setClientes([]);
+      setBarberos([]);
+      setServicios([]);
     } finally {
       setLoading(false);
     }
   };
+
 
   // Calcular comisiones
   const calcularComisiones = () => {
@@ -46,15 +71,18 @@ export default function Dashboard() {
     let totalComisionBarberos = 0;
     let totalComisionDueno = 0;
 
+
     citas.forEach(cita => {
       const barbero = barberos.find(b => b.id === cita.barbero_id);
       const comisionBarbero = barbero ? (cita.precio * barbero.comision) / 100 : 0;
       const comisionDueno = (cita.precio * 45) / 100;
 
+
       totalIngresos += cita.precio;
       totalComisionBarberos += comisionBarbero;
       totalComisionDueno += comisionDueno;
     });
+
 
     return {
       totalIngresos,
@@ -64,7 +92,9 @@ export default function Dashboard() {
     };
   };
 
+
   const comisiones = calcularComisiones();
+
 
   // Calcular estadísticas reales
   const stats = [
@@ -98,6 +128,7 @@ export default function Dashboard() {
     },
   ];
 
+
   // Ingresos mensuales reales
   const getRevenueData = () => {
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -109,11 +140,13 @@ export default function Dashboard() {
       ingresos[mes] += cita.precio;
     });
 
+
     return meses.map((name, idx) => ({
       name,
       ingresos: ingresos[idx]
     }));
   };
+
 
   // Servicios más solicitados
   const getServiciosData = () => {
@@ -121,6 +154,7 @@ export default function Dashboard() {
     citas.forEach(cita => {
       serviciosCount[cita.servicio] = (serviciosCount[cita.servicio] || 0) + 1;
     });
+
 
     const colores = ['#FDB913', '#FF8C42', '#E63946', '#2D3436', '#1E90FF'];
     return Object.entries(serviciosCount)
@@ -130,6 +164,7 @@ export default function Dashboard() {
         fill: colores[idx % colores.length]
       }));
   };
+
 
   // Citas por día de la semana
   const getCitasData = () => {
@@ -142,15 +177,18 @@ export default function Dashboard() {
       conteo[dia === 0 ? 6 : dia - 1]++;
     });
 
+
     return dias.map((name, idx) => ({
       name,
       citas: conteo[idx]
     }));
   };
 
+
   const revenueData = getRevenueData();
   const serviciosData = getServiciosData();
   const citasData = getCitasData();
+
 
   if (loading) {
     return (
@@ -160,6 +198,7 @@ export default function Dashboard() {
     );
   }
 
+
   return (
     <main className="ml-64 mt-16 p-8 bg-gradient-to-br from-white to-yellow-50 min-h-screen">
       {/* Título */}
@@ -168,12 +207,14 @@ export default function Dashboard() {
         <p className="text-gray-500 mt-2">Bienvenido al sistema de gestión de Barberia Jordan</p>
       </div>
 
+
       {/* Error si existe */}
       {error && (
         <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
           ❌ {error}
         </div>
       )}
+
 
       {/* KPIs principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -194,6 +235,7 @@ export default function Dashboard() {
         ))}
       </div>
 
+
       {/* Tarjetas de comisiones */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Comisión Barberos */}
@@ -208,6 +250,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+
         {/* Comisión Dueño */}
         <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow-md border-t-4 border-green-500 p-6">
           <div className="flex items-center justify-between">
@@ -219,6 +262,7 @@ export default function Dashboard() {
             <div className="text-5xl">💎</div>
           </div>
         </div>
+
 
         {/* Ganancia Neta */}
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow-md border-t-4 border-purple-500 p-6">
@@ -232,6 +276,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
 
       {/* Tabla desglose de comisiones */}
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-yellow-300 mb-8">
@@ -275,6 +320,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Gráfico de Ingresos */}
@@ -303,6 +349,7 @@ export default function Dashboard() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
+
 
         {/* Gráfico de Servicios */}
         <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-red-300">
@@ -335,6 +382,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+
       {/* Gráfico de Citas por día */}
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-yellow-300 mb-8">
         <h3 className="text-lg font-bold text-gray-800 mb-4">Citas por Día de la Semana</h3>
@@ -349,6 +397,7 @@ export default function Dashboard() {
         </ResponsiveContainer>
       </div>
 
+
       {/* Tabla de registros recientes */}
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
         <div className="flex justify-between items-center mb-4">
@@ -357,6 +406,7 @@ export default function Dashboard() {
             Ver Todos →
           </a>
         </div>
+
 
         {citas.length > 0 ? (
           <div className="overflow-x-auto">

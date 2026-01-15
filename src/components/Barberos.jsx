@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
+
 const Barberos = () => {
   const { user, authLoading, token } = useContext(AuthContext);
   const [barberos, setBarberos] = useState([]);
@@ -16,7 +17,9 @@ const Barberos = () => {
     comision: 20.0,
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-backend.up.railway.app';
+
+  const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app';
+
 
   // Crear headers con token
   const getHeaders = () => ({
@@ -24,12 +27,14 @@ const Barberos = () => {
     'Authorization': `Bearer ${token}`
   });
 
+
   // Cargar barberos
   const fetchBarberos = async () => {
     if (!token) {
       console.log('⚠️ No hay token, esperando...');
       return;
     }
+
 
     try {
       setLoading(true);
@@ -40,8 +45,17 @@ const Barberos = () => {
         headers: getHeaders()
       });
 
+
       console.log('✅ Respuesta de barberos:', response.data);
-      setBarberos(response.data);
+      
+      // Validar que sea un array
+      if (Array.isArray(response.data)) {
+        setBarberos(response.data);
+      } else {
+        console.error('❌ La respuesta no es un array:', response.data);
+        setError('Error: respuesta inválida del servidor');
+        setBarberos([]);
+      }
     } catch (err) {
       console.error('❌ Error fetching barberos:', err);
       if (err.response?.status === 401) {
@@ -55,12 +69,14 @@ const Barberos = () => {
     }
   };
 
+
   // Cargar barberos cuando el token esté disponible
   useEffect(() => {
     if (!authLoading && token) {
       fetchBarberos();
     }
   }, [token, authLoading]);
+
 
   // Manejar cambios en el formulario
   const handleInputChange = (e) => {
@@ -71,6 +87,7 @@ const Barberos = () => {
     }));
   };
 
+
   // Crear nuevo barbero
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -80,11 +97,13 @@ const Barberos = () => {
       return;
     }
 
+
     try {
       setLoading(true);
       const response = await axios.post(`${API_URL}/api/barberos`, formData, {
         headers: getHeaders()
       });
+
 
       console.log('✅ Barbero creado:', response.data);
       setBarberos([...barberos, response.data]);
@@ -99,20 +118,24 @@ const Barberos = () => {
     }
   };
 
+
   // Actualizar barbero
   const handleUpdate = async (e) => {
     e.preventDefault();
+
 
     if (!formData.nombre.trim()) {
       setError('El nombre es requerido');
       return;
     }
 
+
     try {
       setLoading(true);
       const response = await axios.put(`${API_URL}/api/barberos/${editingId}`, formData, {
         headers: getHeaders()
       });
+
 
       console.log('✅ Barbero actualizado:', response.data);
       setBarberos(barberos.map(b => b.id === editingId ? response.data : b));
@@ -127,15 +150,18 @@ const Barberos = () => {
     }
   };
 
+
   // Eliminar barbero
   const handleDelete = async (id) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar este barbero?')) return;
+
 
     try {
       setLoading(true);
       await axios.delete(`${API_URL}/api/barberos/${id}`, {
         headers: getHeaders()
       });
+
 
       console.log('✅ Barbero eliminado');
       setBarberos(barberos.filter(b => b.id !== id));
@@ -147,6 +173,7 @@ const Barberos = () => {
       setLoading(false);
     }
   };
+
 
   // Editar barbero
   const handleEdit = (barbero) => {
@@ -160,24 +187,30 @@ const Barberos = () => {
     setShowForm(true);
   };
 
+
   if (authLoading) {
     return <div className="barberos-container">⏳ Cargando autenticación...</div>;
   }
+
 
   if (!user) {
     return <div className="barberos-container">🔒 Debes estar autenticado para ver este contenido</div>;
   }
 
+
   if (user.rol !== 'admin') {
     return <div className="barberos-container">🚫 Solo los administradores pueden gestionar barberos</div>;
   }
+
 
   return (
     <div className="barberos-container">
       <h1>💈 Barberos</h1>
       <p>Gestiona los barberos de tu negocio</p>
 
+
       {error && <div className="error-message">⚠️ {error}</div>}
+
 
       {/* Formulario */}
       {showForm && (
@@ -197,6 +230,7 @@ const Barberos = () => {
               />
             </div>
 
+
             <div className="form-group">
               <label htmlFor="email">Email</label>
               <input
@@ -209,6 +243,7 @@ const Barberos = () => {
               />
             </div>
 
+
             <div className="form-group">
               <label htmlFor="telefono">Teléfono</label>
               <input
@@ -220,6 +255,7 @@ const Barberos = () => {
                 placeholder="Ej: 1234567890"
               />
             </div>
+
 
             <div className="form-group">
               <label htmlFor="comision">Comisión (%)</label>
@@ -234,6 +270,7 @@ const Barberos = () => {
                 step="0.1"
               />
             </div>
+
 
             <div className="form-actions">
               <button type="submit" disabled={loading}>
@@ -254,6 +291,7 @@ const Barberos = () => {
         </div>
       )}
 
+
       {/* Botón para mostrar formulario */}
       {!showForm && (
         <button className="btn-primary" onClick={() => setShowForm(true)}>
@@ -261,15 +299,19 @@ const Barberos = () => {
         </button>
       )}
 
+
       {/* Lista de barberos */}
       <div className="barberos-list">
         <h2>💇 Barberos ({barberos.length})</h2>
 
+
         {loading && !showForm && <p>⏳ Cargando...</p>}
+
 
         {!loading && barberos.length === 0 && (
           <p>📭 No hay barberos registrados aún.</p>
         )}
+
 
         {barberos.length > 0 && (
           <table className="barberos-table">
@@ -318,5 +360,6 @@ const Barberos = () => {
     </div>
   );
 };
+
 
 export default Barberos;

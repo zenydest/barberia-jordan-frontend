@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
 
+
 export default function Clientes() {
-  const { axios, token } = useContext(AuthContext);
+  const { token, authLoading } = useContext(AuthContext);
   const [clientes, setClientes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,25 +20,54 @@ export default function Clientes() {
     telefono: ''
   });
 
+  const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app';
+
+  // Crear headers con token
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  });
+
+
   useEffect(() => {
-    if (!token) return;
+    if (authLoading) {
+      return;
+    }
+
+    if (!token) {
+      return;
+    }
+    
     cargarClientes();
-  }, [token]);
+  }, [token, authLoading]);
+
 
 
   const cargarClientes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/clientes');
-      setClientes(response.data);
+      const response = await axios.get(`${API_URL}/api/clientes`, {
+        headers: getHeaders()
+      });
+      
+      // Validar que sea un array
+      if (Array.isArray(response.data)) {
+        setClientes(response.data);
+      } else {
+        console.error('❌ La respuesta no es un array:', response.data);
+        setError('Error: respuesta inválida del servidor');
+        setClientes([]);
+      }
       setError('');
     } catch (err) {
       setError('Error al cargar clientes');
       console.error(err);
+      setClientes([]);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -46,6 +77,7 @@ export default function Clientes() {
     }));
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -54,14 +86,19 @@ export default function Clientes() {
       return;
     }
 
+
     try {
       setLoading(true);
       
       if (editingId) {
-        await axios.put(`/clientes/${editingId}`, formData);
+        await axios.put(`${API_URL}/api/clientes/${editingId}`, formData, {
+          headers: getHeaders()
+        });
         setSuccess('¡Cliente actualizado exitosamente!');
       } else {
-        await axios.post(`/clientes`, formData);
+        await axios.post(`${API_URL}/api/clientes`, formData, {
+          headers: getHeaders()
+        });
         setSuccess('¡Cliente creado exitosamente!');
       }
       
@@ -83,6 +120,7 @@ export default function Clientes() {
     }
   };
 
+
   const handleEditar = (cliente) => {
     setFormData({
       nombre: cliente.nombre,
@@ -93,6 +131,7 @@ export default function Clientes() {
     setShowForm(true);
     setError('');
   };
+
 
   const handleCancelar = () => {
     setFormData({
@@ -105,11 +144,14 @@ export default function Clientes() {
     setError('');
   };
 
+
   const handleEliminar = async (id) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
       try {
         setLoading(true);
-        await axios.delete(`/clientes/${id}`);
+        await axios.delete(`${API_URL}/api/clientes/${id}`, {
+          headers: getHeaders()
+        });
         setSuccess('Cliente eliminado correctamente');
         setError('');
         await cargarClientes();
@@ -123,11 +165,13 @@ export default function Clientes() {
     }
   };
 
+
   // Filtrar clientes por búsqueda
   const clientesFiltrados = clientes.filter(cliente =>
     cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.telefono?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
 
   return (
     <main className="ml-64 mt-16 p-8 bg-gradient-to-br from-white to-yellow-50 min-h-screen">
@@ -152,6 +196,7 @@ export default function Clientes() {
         </button>
       </div>
 
+
       {/* Mensajes */}
       {success && (
         <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
@@ -163,6 +208,7 @@ export default function Clientes() {
           ❌ {error}
         </div>
       )}
+
 
       {/* Formulario */}
       {showForm && (
@@ -187,6 +233,7 @@ export default function Clientes() {
               />
             </div>
 
+
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -201,6 +248,7 @@ export default function Clientes() {
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
               />
             </div>
+
 
             {/* Teléfono */}
             <div>
@@ -217,6 +265,7 @@ export default function Clientes() {
               />
             </div>
 
+
             {/* Botón */}
             <div className="md:col-span-2">
               <button
@@ -231,6 +280,7 @@ export default function Clientes() {
         </div>
       )}
 
+
       {/* Tabla de clientes */}
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
         {/* Buscador */}
@@ -244,9 +294,11 @@ export default function Clientes() {
           />
         </div>
 
+
         <h3 className="text-lg font-bold text-gray-800 mb-4">
           Lista de Clientes ({clientesFiltrados.length})
         </h3>
+
 
         {loading && !showForm ? (
           <div className="text-center py-8 text-gray-500">⏳ Cargando...</div>

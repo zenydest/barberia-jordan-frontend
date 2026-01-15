@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import axios from 'axios';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { AuthContext } from '../context/AuthContext';
 import logo from '../assets/logo-jordan.png';
 
 
+
 export default function Reportes() {
-  const { axios, token } = useContext(AuthContext);
+  const { token, authLoading } = useContext(AuthContext);
   const [citas, setCitas] = useState([]);
   const [barberos, setBarberos] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -21,31 +23,53 @@ export default function Reportes() {
     fecha_fin: ''
   });
 
+  const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app';
+
+  // Crear headers con token
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  });
+
+
   useEffect(() => {
-    if (!token) return;
+    if (authLoading) {
+      return;
+    }
+
+    if (!token) {
+      return;
+    }
+    
     cargarDatos();
-  }, [token]);
+  }, [token, authLoading]);
+
 
   const cargarDatos = async () => {
     try {
       setLoading(true);
       const [citasRes, barberosRes, clientesRes] = await Promise.all([
-        axios.get(`/citas`),
-        axios.get(`/barberos`),
-        axios.get(`/clientes`)
+        axios.get(`${API_URL}/api/citas`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/api/barberos`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/api/clientes`, { headers: getHeaders() })
       ]);
       
-      setCitas(citasRes.data);
-      setBarberos(barberosRes.data);
-      setClientes(clientesRes.data);
+      // Validar que sean arrays
+      setCitas(Array.isArray(citasRes.data) ? citasRes.data : []);
+      setBarberos(Array.isArray(barberosRes.data) ? barberosRes.data : []);
+      setClientes(Array.isArray(clientesRes.data) ? clientesRes.data : []);
       setError('');
     } catch (err) {
       setError('Error al cargar datos');
       console.error(err);
+      setCitas([]);
+      setBarberos([]);
+      setClientes([]);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleFiltroChange = (e) => {
     const { name, value } = e.target;
@@ -55,12 +79,14 @@ export default function Reportes() {
     }));
   };
 
+
   // Calcular comisiones para una cita
   const calcularComisiones = (cita) => {
     const barbero = barberos.find(b => b.id === cita.barbero_id);
     const comisionBarbero = barbero ? (cita.precio * barbero.comision) / 100 : 0;
     const comisionDueno = (cita.precio * 45) / 100;
     const gananciaNeta = cita.precio - comisionBarbero - comisionDueno;
+
 
     return {
       comisionBarbero,
@@ -69,17 +95,21 @@ export default function Reportes() {
     };
   };
 
+
   // Filtrar citas según los filtros
   const citasFiltradas = citas.filter(cita => {
     let cumple = true;
+
 
     if (filtros.barbero_id && cita.barbero_id !== parseInt(filtros.barbero_id)) {
       cumple = false;
     }
 
+
     if (filtros.cliente_id && cita.cliente_id !== parseInt(filtros.cliente_id)) {
       cumple = false;
     }
+
 
     if (filtros.fecha_inicio) {
       const fechaCita = new Date(cita.fecha);
@@ -89,6 +119,7 @@ export default function Reportes() {
       }
     }
 
+
     if (filtros.fecha_fin) {
       const fechaCita = new Date(cita.fecha);
       const fechaFin = new Date(filtros.fecha_fin);
@@ -97,8 +128,10 @@ export default function Reportes() {
       }
     }
 
+
     return cumple;
   });
+
 
   // Calcular estadísticas
   const estadisticas = {
@@ -111,6 +144,7 @@ export default function Reportes() {
       ? (citasFiltradas.reduce((sum, cita) => sum + cita.precio, 0) / citasFiltradas.length).toFixed(2)
       : 0
   };
+
 
   // Estadísticas por barbero
   const estadisticasPorBarbero = {};
@@ -132,6 +166,7 @@ export default function Reportes() {
     estadisticasPorBarbero[cita.barbero].comisionDueno += comisiones.comisionDueno;
     estadisticasPorBarbero[cita.barbero].gananciaNeta += comisiones.gananciaNeta;
   });
+
 
   // Exportar a PDF
   const exportarPDF = () => {
@@ -249,6 +284,7 @@ export default function Reportes() {
       ];
     });
 
+
     autoTable(doc, {
       head: [['Cliente', 'Barbero', 'Servicio', 'Precio', 'Com. Barbero', 'Com. Dueño', 'Ganancia Neta', 'Fecha']],
       body: tableData,
@@ -280,6 +316,7 @@ export default function Reportes() {
       }
     });
 
+
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -289,8 +326,10 @@ export default function Reportes() {
       doc.text('Barberia Jordan © 2026', 14, 285);
     }
 
+
     doc.save(`Reporte_Comisiones_${new Date().toLocaleDateString('es-AR').replace(/\//g, '-')}.pdf`);
   };
+
 
   // Exportar a Excel
   const exportarExcel = () => {
@@ -345,6 +384,7 @@ export default function Reportes() {
       };
     });
 
+
     const wsDetalle = XLSX.utils.json_to_sheet(datosExcel);
     wsDetalle['!cols'] = [
       { wch: 20 },
@@ -380,8 +420,10 @@ export default function Reportes() {
     
     XLSX.utils.book_append_sheet(wb, wsStats, 'Estadísticas');
 
+
     XLSX.writeFile(wb, `Reporte_Comisiones_${new Date().toLocaleDateString('es-AR').replace(/\//g, '-')}.xlsx`);
   };
+
 
   const limpiarFiltros = () => {
     setFiltros({
@@ -392,6 +434,7 @@ export default function Reportes() {
     });
   };
 
+
   return (
     <main className="ml-64 mt-16 p-8 bg-gradient-to-br from-white to-yellow-50 min-h-screen">
       <div className="mb-8">
@@ -399,11 +442,13 @@ export default function Reportes() {
         <p className="text-gray-500 mt-2">Analiza las citas, comisiones y ganancias de tu barberia</p>
       </div>
 
+
       {error && (
         <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
           ❌ {error}
         </div>
       )}
+
 
       {/* Filtros */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8 border-t-4 border-yellow-300">
@@ -427,6 +472,7 @@ export default function Reportes() {
             </select>
           </div>
 
+
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Cliente</label>
             <select
@@ -444,6 +490,7 @@ export default function Reportes() {
             </select>
           </div>
 
+
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha Inicio</label>
             <input
@@ -454,6 +501,7 @@ export default function Reportes() {
               className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
             />
           </div>
+
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha Fin</label>
@@ -467,6 +515,7 @@ export default function Reportes() {
           </div>
         </div>
 
+
         <button
           onClick={limpiarFiltros}
           className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold rounded-lg transition"
@@ -475,6 +524,7 @@ export default function Reportes() {
         </button>
       </div>
 
+
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-md border-t-4 border-yellow-300 p-6">
@@ -482,21 +532,25 @@ export default function Reportes() {
           <h3 className="text-3xl font-bold text-gray-800 mt-2">{estadisticas.totalCitas}</h3>
         </div>
 
+
         <div className="bg-white rounded-lg shadow-md border-t-4 border-orange-300 p-6">
           <p className="text-gray-600 text-sm font-medium">Total de Ingresos</p>
           <h3 className="text-3xl font-bold text-orange-600 mt-2">${estadisticas.totalIngresos.toFixed(2)}</h3>
         </div>
+
 
         <div className="bg-white rounded-lg shadow-md border-t-4 border-blue-300 p-6">
           <p className="text-gray-600 text-sm font-medium">Comisión Barberos</p>
           <h3 className="text-3xl font-bold text-blue-600 mt-2">${estadisticas.totalComisionBarberos.toFixed(2)}</h3>
         </div>
 
+
         <div className="bg-white rounded-lg shadow-md border-t-4 border-green-300 p-6">
           <p className="text-gray-600 text-sm font-medium">Comisión Dueño (45%)</p>
           <h3 className="text-3xl font-bold text-green-600 mt-2">${estadisticas.totalComisionDueno.toFixed(2)}</h3>
         </div>
       </div>
+
 
       {/* Ganancia Neta */}
       <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg shadow-md border-t-4 border-purple-500 p-6 mb-8">
@@ -509,6 +563,7 @@ export default function Reportes() {
           <div className="text-6xl">💰</div>
         </div>
       </div>
+
 
       {/* Botones de Exportación */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8 border-t-4 border-orange-300">
@@ -523,6 +578,7 @@ export default function Reportes() {
             📄 Descargar PDF
           </button>
 
+
           <button
             onClick={exportarExcel}
             disabled={loading || citasFiltradas.length === 0}
@@ -532,16 +588,19 @@ export default function Reportes() {
           </button>
         </div>
 
+
         {citasFiltradas.length === 0 && (
           <p className="text-gray-500 mt-4">No hay citas para exportar con los filtros seleccionados</p>
         )}
       </div>
+
 
       {/* Tabla de citas */}
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
         <h3 className="text-lg font-bold text-gray-800 mb-4">
           Citas Filtradas ({citasFiltradas.length})
         </h3>
+
 
         {loading ? (
           <div className="text-center py-8 text-gray-500">⏳ Cargando...</div>
