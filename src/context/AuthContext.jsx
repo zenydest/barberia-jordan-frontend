@@ -11,8 +11,50 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [error, setError] = useState('');
 
-
+  // Usar proxy CORS si está disponible, sino usar directo
   const API_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-backend.up.railway.app';
+  const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/'; // Workaround temporal
+
+  // Función para hacer requests con reintentos
+  const apiRequest = async (method, endpoint, data = null) => {
+    const url = `${API_URL}${endpoint}`;
+    
+    try {
+      // Intenta primero directo
+      if (method === 'GET') {
+        return await axios.get(url);
+      } else if (method === 'POST') {
+        return await axios.post(url, data);
+      } else if (method === 'PUT') {
+        return await axios.put(url, data);
+      } else if (method === 'DELETE') {
+        return await axios.delete(url);
+      }
+    } catch (directError) {
+      console.warn('❌ Request directo falló, intentando con proxy...');
+      
+      // Si falla por CORS, intenta con fetch + proxy
+      try {
+        const response = await fetch(CORS_PROXY + url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: data ? JSON.stringify(data) : null
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return { data: await response.json() };
+      } catch (proxyError) {
+        throw directError; // Lanza el error original si ambos fallan
+      }
+    }
+  };
 
 
   // Al montar, recuperar token del localStorage ANTES de cualquier cosa
@@ -29,17 +71,19 @@ export const AuthProvider = ({ children }) => {
           axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
           axios.defaults.baseURL = API_URL;
           
-          // Verificar token con el backend
-          const response = await axios.get(`${API_URL}/api/auth/me`, {
-            headers: {
-              'Authorization': `Bearer ${savedToken}`
-            }
-          });
-          
-          console.log('✅ Token válido. Usuario:', response.data);
-          setUser(response.data);
-          setToken(savedToken);
-          setError('');
+          try {
+            // Intenta verificar token
+            const response = await apiRequest('GET', '/api/auth/me');
+            console.log('✅ Token válido. Usuario:', response.data);
+            setUser(response.data);
+            setToken(savedToken);
+            setError('');
+          } catch (err) {
+            console.error('❌ Token inválido:', err.message);
+            localStorage.removeItem('token');
+            setToken(null);
+            setUser(null);
+          }
         } else {
           console.log('❌ No hay token en localStorage');
           setUser(null);
@@ -50,7 +94,6 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
-        setError('Token expirado. Por favor inicia sesión nuevamente.');
       } finally {
         setAuthLoading(false);
       }
@@ -67,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       setError('');
       console.log('📝 Intentando login con:', email);
 
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
+      const response = await apiRequest('POST', '/api/auth/login', {
         email,
         password
       });
@@ -119,7 +162,7 @@ export const AuthProvider = ({ children }) => {
       setError('');
       console.log('📝 Intentando signup con:', email);
 
-      const response = await axios.post(`${API_URL}/api/auth/registro`, {
+      const response = await apiRequest('POST', '/api/auth/registro', {
         email,
         password,
         nombre
