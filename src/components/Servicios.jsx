@@ -2,8 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
-
-
 export default function Servicios() {
   const { token, authLoading } = useContext(AuthContext);
   const [servicios, setServicios] = useState([]);
@@ -12,6 +10,7 @@ export default function Servicios() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [citasCount, setCitasCount] = useState({});
   
   const [formData, setFormData] = useState({
     nombre: '',
@@ -21,53 +20,59 @@ export default function Servicios() {
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app';
 
-  // Crear headers con token
   const getHeaders = () => ({
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
   });
 
-
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
-    if (!token) {
-      return;
-    }
-    
+    if (authLoading) return;
+    if (!token) return;
     cargarServicios();
+    cargarCitas();
   }, [token, authLoading]);
-
-
 
   const cargarServicios = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/api/servicios`, {
+      const response = await axios.get(`${API_URL}/api/servicios`, {
         headers: getHeaders()
       });
       
-      // Validar que sea un array
-      if (Array.isArray(res.data)) {
-        setServicios(res.data);
+      if (Array.isArray(response.data)) {
+        setServicios(response.data);
       } else {
-        console.error('❌ La respuesta no es un array:', res.data);
+        console.error('❌ La respuesta no es un array:', response.data);
         setError('Error: respuesta inválida del servidor');
         setServicios([]);
       }
       setError('');
     } catch (err) {
       setError('Error al cargar servicios');
-      console.error('❌ Error:', err);
+      console.error(err);
       setServicios([]);
     } finally {
       setLoading(false);
     }
   };
 
-
+  const cargarCitas = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/citas`, {
+        headers: getHeaders()
+      });
+      
+      if (Array.isArray(response.data)) {
+        const conteo = {};
+        response.data.forEach(cita => {
+          conteo[cita.servicio_id] = (conteo[cita.servicio_id] || 0) + 1;
+        });
+        setCitasCount(conteo);
+      }
+    } catch (err) {
+      console.error('Error al cargar citas:', err);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,8 +82,6 @@ export default function Servicios() {
     }));
   };
 
-
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -86,6 +89,7 @@ export default function Servicios() {
       setError('El nombre del servicio es requerido');
       return;
     }
+
     if (!formData.precio || formData.precio <= 0) {
       setError('El precio debe ser mayor a 0');
       return;
@@ -124,8 +128,6 @@ export default function Servicios() {
     }
   };
 
-
-
   const handleEditar = (servicio) => {
     setFormData({
       nombre: servicio.nombre,
@@ -136,8 +138,6 @@ export default function Servicios() {
     setShowForm(true);
     setError('');
   };
-
-
 
   const handleCancelar = () => {
     setFormData({
@@ -150,29 +150,35 @@ export default function Servicios() {
     setError('');
   };
 
+  const handleEliminar = async (id, nombreServicio) => {
+    const citasDelServicio = citasCount[id] || 0;
 
+    if (citasDelServicio > 0) {
+      setError(
+        `❌ No se puede eliminar "${nombreServicio}" porque tiene ${citasDelServicio} cita${citasDelServicio > 1 ? 's' : ''} registrada${citasDelServicio > 1 ? 's' : ''}. ` +
+        `Primero debes eliminar las citas en la sección "Registrar Cita".`
+      );
+      return;
+    }
 
-  const handleEliminar = async (id) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este servicio?')) {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar el servicio "${nombreServicio}"?`)) {
       try {
         setLoading(true);
         await axios.delete(`${API_URL}/api/servicios/${id}`, {
           headers: getHeaders()
         });
-        setSuccess('Servicio eliminado correctamente');
+        setSuccess('✅ Servicio eliminado correctamente');
         setError('');
         await cargarServicios();
         setTimeout(() => setSuccess(''), 3000);
       } catch (err) {
-        setError('Error al eliminar servicio');
+        setError(err.response?.data?.error || 'Error al eliminar servicio');
         console.error(err);
       } finally {
         setLoading(false);
       }
     }
   };
-
-
 
   return (
     <main className="ml-64 mt-16 p-8 bg-gradient-to-br from-white to-yellow-50 min-h-screen">
@@ -196,20 +202,16 @@ export default function Servicios() {
         </button>
       </div>
 
-
-
       {success && (
         <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
-          ✅ {success}
+          {success}
         </div>
       )}
       {error && (
         <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
-          ❌ {error}
+          {error}
         </div>
       )}
-
-
 
       {showForm && (
         <div className="bg-white rounded-lg shadow-md p-8 mb-8 border-t-4 border-yellow-300">
@@ -232,8 +234,6 @@ export default function Servicios() {
               />
             </div>
 
-
-
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Precio ($) <span className="text-red-500">*</span>
@@ -250,8 +250,6 @@ export default function Servicios() {
               />
             </div>
 
-
-
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Descripción
@@ -266,8 +264,6 @@ export default function Servicios() {
               />
             </div>
 
-
-
             <div className="md:col-span-2">
               <button
                 type="submit"
@@ -281,60 +277,88 @@ export default function Servicios() {
         </div>
       )}
 
-
-
       <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">
+        <h3 className="text-lg font-bold text-gray-800 mb-6">
           Lista de Servicios ({servicios.length})
         </h3>
 
-
-
-        {authLoading ? (
-          <div className="text-center py-8 text-gray-500">⏳ Inicializando sesión...</div>
-        ) : loading && !showForm ? (
+        {loading && !showForm ? (
           <div className="text-center py-8 text-gray-500">⏳ Cargando...</div>
         ) : servicios.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            📭 No hay servicios registrados. ¡Agrega uno nuevo!
+          <div className="text-center py-12 text-gray-500">
+            <div className="text-5xl mb-4">📭</div>
+            No hay servicios registrados. ¡Agrega uno nuevo!
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 border-b-2 border-yellow-300">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Servicio</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Precio</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Descripción</th>
-                  <th className="px-4 py-3 text-center font-semibold text-gray-700">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {servicios.map((servicio) => (
-                  <tr key={servicio.id} className="border-b border-gray-200 hover:bg-yellow-50 transition">
-                    <td className="px-4 py-3 font-medium text-gray-800">{servicio.nombre}</td>
-                    <td className="px-4 py-3 font-semibold text-orange-600">${servicio.precio.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-gray-600">{servicio.descripcion || '-'}</td>
-                    <td className="px-4 py-3 text-center flex gap-2 justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {servicios.map((servicio) => {
+              const tieneCitas = (citasCount[servicio.id] || 0) > 0;
+              
+              return (
+                <div 
+                  key={servicio.id} 
+                  className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-md hover:shadow-lg transition-shadow border-l-4 border-purple-300 overflow-hidden group"
+                >
+                  <div className="bg-gradient-to-r from-purple-400 to-pink-400 p-4 text-white">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-3xl">✂️</span>
+                      <h4 className="text-xl font-bold truncate">{servicio.nombre}</h4>
+                    </div>
+                    <div className="text-lg font-bold">
+                      ${servicio.precio.toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="bg-white rounded-lg p-4 mb-4">
+                      <div className="space-y-3">
+                        {servicio.descripcion && (
+                          <div>
+                            <p className="text-gray-600 text-sm">{servicio.descripcion}</p>
+                          </div>
+                        )}
+                        
+                        <div className="pt-2 border-t border-gray-200">
+                          <span className="text-gray-600 text-sm font-medium">📅 Citas:</span>
+                          <span className={`ml-2 font-bold text-sm ${tieneCitas ? 'text-blue-600' : 'text-green-600'}`}>
+                            {citasCount[servicio.id] || 0}
+                          </span>
+                          {tieneCitas && (
+                            <div className="text-xs text-red-600 mt-1 p-2 bg-red-50 rounded">
+                              ⚠️ No se puede eliminar (tiene citas)
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleEditar(servicio)}
                         disabled={loading}
-                        className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition disabled:opacity-50"
+                        className="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        ✏️ Editar
+                        <span>✏️</span> Editar
                       </button>
                       <button
-                        onClick={() => handleEliminar(servicio.id)}
-                        disabled={loading}
-                        className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded transition disabled:opacity-50"
+                        onClick={() => handleEliminar(servicio.id, servicio.nombre)}
+                        disabled={loading || tieneCitas}
+                        className={`flex-1 px-3 py-2 text-white text-sm font-bold rounded-lg transition flex items-center justify-center gap-2 ${
+                          tieneCitas 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-red-500 hover:bg-red-600'
+                        }`}
+                        title={tieneCitas ? `No se puede eliminar (${citasCount[servicio.id]} citas)` : 'Eliminar servicio'}
                       >
-                        🗑️ Eliminar
+                        <span>🗑️</span> Eliminar
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-5 transition-all rounded-xl pointer-events-none" />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
