@@ -2,7 +2,9 @@ import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 
+
 export const AuthContext = createContext();
+
 
 
 export const AuthProvider = ({ children }) => {
@@ -11,7 +13,10 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app';
+
+  // ✅ URL CORRECTA DE RAILWAY
+  const API_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-backend.railway.app';
+
 
 
   // Al montar, recuperar token del localStorage
@@ -55,8 +60,10 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
+
     initializeAuth();
   }, [API_URL]);
+
 
 
   // Login
@@ -66,10 +73,12 @@ export const AuthProvider = ({ children }) => {
       setError('');
       console.log('📝 Intentando login con:', email);
 
+
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password
       });
+
 
       console.log('✅ Login exitoso:', response.data);
       const newToken = response.data.token;
@@ -99,6 +108,7 @@ export const AuthProvider = ({ children }) => {
   };
 
 
+
   // Logout
   const logout = () => {
     console.log('🚪 Logout');
@@ -110,6 +120,7 @@ export const AuthProvider = ({ children }) => {
   };
 
 
+
   // Signup
   const signup = async (email, password, nombre) => {
     try {
@@ -117,11 +128,13 @@ export const AuthProvider = ({ children }) => {
       setError('');
       console.log('📝 Intentando signup con:', email);
 
+
       const response = await axios.post(`${API_URL}/api/auth/registro`, {
         email,
         password,
         nombre
       });
+
 
       console.log('✅ Signup exitoso:', response.data);
       const newToken = response.data.token;
@@ -151,6 +164,12 @@ export const AuthProvider = ({ children }) => {
   };
 
 
+
+  // ✅ NUEVO: Función apiUrl para compatibilidad con Usuarios.jsx
+  const apiUrl = API_URL;
+
+
+
   const value = {
     user,
     token,
@@ -161,8 +180,10 @@ export const AuthProvider = ({ children }) => {
     signup,
     setError,
     isAuthenticated: !!user && !!token,
+    apiUrl,
     axios
   };
+
 
 
   return (
