@@ -14,8 +14,6 @@ export default function Barberos() {
   
   const [formData, setFormData] = useState({
     nombre: '',
-    email: '',
-    telefono: '',
     comision: ''
   });
 
@@ -91,6 +89,11 @@ export default function Barberos() {
       return;
     }
 
+    if (!formData.comision || formData.comision <= 0) {
+      setError('La comisión debe ser mayor a 0');
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -108,8 +111,6 @@ export default function Barberos() {
       
       setFormData({
         nombre: '',
-        email: '',
-        telefono: '',
         comision: ''
       });
       setShowForm(false);
@@ -128,9 +129,7 @@ export default function Barberos() {
   const handleEditar = (barbero) => {
     setFormData({
       nombre: barbero.nombre,
-      email: barbero.email || '',
-      telefono: barbero.telefono || '',
-      comision: barbero.comision || ''
+      comision: barbero.comision
     });
     setEditingId(barbero.id);
     setShowForm(true);
@@ -140,8 +139,6 @@ export default function Barberos() {
   const handleCancelar = () => {
     setFormData({
       nombre: '',
-      email: '',
-      telefono: '',
       comision: ''
     });
     setShowForm(false);
@@ -153,22 +150,26 @@ export default function Barberos() {
     const citasDelBarbero = citasCount[id] || 0;
 
     if (citasDelBarbero > 0) {
-      setError(
-        `❌ No se puede eliminar "${nombreBarbero}" porque tiene ${citasDelBarbero} cita${citasDelBarbero > 1 ? 's' : ''} registrada${citasDelBarbero > 1 ? 's' : ''}. ` +
-        `Primero debes eliminar las citas en la sección "Registrar Cita".`
-      );
-      return;
+      if (!window.confirm(
+        `⚠️ ATENCIÓN\n\n"${nombreBarbero}" tiene ${citasDelBarbero} cita${citasDelBarbero > 1 ? 's' : ''}.\n\n` +
+        `✅ Las citas se guardarán con el barbero como "❌ (Eliminado)"\n` +
+        `✅ Los datos de la cita (precio, notas, fecha) se mantienen intactos\n\n` +
+        `¿Deseas continuar?`
+      )) {
+        return;
+      }
     }
 
-    if (window.confirm(`¿Estás seguro de que deseas eliminar el barbero "${nombreBarbero}"?`)) {
+    if (window.confirm(`¿Estás SEGURO de que deseas eliminar "${nombreBarbero}"?`)) {
       try {
         setLoading(true);
         await axios.delete(`${API_URL}/api/barberos/${id}`, {
           headers: getHeaders()
         });
-        setSuccess('✅ Barbero eliminado correctamente');
+        setSuccess('✅ Barbero eliminado correctamente. Las citas se mantienen intactas.');
         setError('');
         await cargarBarberos();
+        await cargarCitas();
         setTimeout(() => setSuccess(''), 3000);
       } catch (err) {
         setError(err.response?.data?.error || 'Error al eliminar barbero');
@@ -183,7 +184,7 @@ export default function Barberos() {
     <main className="ml-64 mt-16 p-8 bg-gradient-to-br from-white to-yellow-50 min-h-screen">
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">💈 Barberos</h2>
+          <h2 className="text-3xl font-bold text-gray-800">💇 Barberos</h2>
           <p className="text-gray-500 mt-2">Gestiona tu equipo de barberos</p>
         </div>
         <button
@@ -221,57 +222,29 @@ export default function Barberos() {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Nombre <span className="text-red-500">*</span>
+                Nombre del Barbero <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="nombre"
                 value={formData.nombre}
                 onChange={handleInputChange}
-                placeholder="Ej: Juan Carlos"
+                placeholder="Ej: Juan Pérez"
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Ej: juan@example.com"
-                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Teléfono
-              </label>
-              <input
-                type="tel"
-                name="telefono"
-                value={formData.telefono}
-                onChange={handleInputChange}
-                placeholder="Ej: 1234567890"
-                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Comisión (%)
+                Comisión (%) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
                 name="comision"
                 value={formData.comision}
                 onChange={handleInputChange}
-                placeholder="Ej: 20"
-                step="0.1"
+                placeholder="Ej: 50"
+                step="0.01"
                 min="0"
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
               />
@@ -290,7 +263,7 @@ export default function Barberos() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-orange-300">
+      <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-purple-300">
         <h3 className="text-lg font-bold text-gray-800 mb-6">
           Lista de Barberos ({barberos.length})
         </h3>
@@ -314,10 +287,10 @@ export default function Barberos() {
                 >
                   <div className="bg-gradient-to-r from-blue-400 to-purple-400 p-4 text-white">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-3xl">💈</span>
+                      <span className="text-3xl">💇</span>
                       <h4 className="text-xl font-bold truncate">{barbero.nombre}</h4>
                     </div>
-                    <div className="text-sm opacity-90">
+                    <div className="text-sm font-semibold">
                       Comisión: {barbero.comision}%
                     </div>
                   </div>
@@ -325,25 +298,14 @@ export default function Barberos() {
                   <div className="p-4">
                     <div className="bg-white rounded-lg p-4 mb-4">
                       <div className="space-y-3">
-                        {barbero.email && (
-                          <div>
-                            <p className="text-gray-600 text-sm">📧 {barbero.email}</p>
-                          </div>
-                        )}
-                        {barbero.telefono && (
-                          <div>
-                            <p className="text-gray-600 text-sm">📱 {barbero.telefono}</p>
-                          </div>
-                        )}
-                        
                         <div className="pt-2 border-t border-gray-200">
                           <span className="text-gray-600 text-sm font-medium">📅 Citas:</span>
                           <span className={`ml-2 font-bold text-sm ${tieneCitas ? 'text-blue-600' : 'text-green-600'}`}>
                             {citasCount[barbero.id] || 0}
                           </span>
                           {tieneCitas && (
-                            <div className="text-xs text-red-600 mt-1 p-2 bg-red-50 rounded">
-                              ⚠️ No se puede eliminar (tiene citas)
+                            <div className="text-xs text-blue-600 mt-2 p-2 bg-blue-50 rounded">
+                              ℹ️ Tiene citas. Al eliminar, mostrarán "❌ (Eliminado)"
                             </div>
                           )}
                         </div>
@@ -360,13 +322,8 @@ export default function Barberos() {
                       </button>
                       <button
                         onClick={() => handleEliminar(barbero.id, barbero.nombre)}
-                        disabled={loading || tieneCitas}
-                        className={`flex-1 px-3 py-2 text-white text-sm font-bold rounded-lg transition flex items-center justify-center gap-2 ${
-                          tieneCitas 
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : 'bg-red-500 hover:bg-red-600'
-                        }`}
-                        title={tieneCitas ? `No se puede eliminar (${citasCount[barbero.id]} citas)` : 'Eliminar barbero'}
+                        disabled={loading}
+                        className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <span>🗑️</span> Eliminar
                       </button>

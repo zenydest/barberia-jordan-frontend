@@ -154,22 +154,26 @@ export default function Servicios() {
     const citasDelServicio = citasCount[id] || 0;
 
     if (citasDelServicio > 0) {
-      setError(
-        `❌ No se puede eliminar "${nombreServicio}" porque tiene ${citasDelServicio} cita${citasDelServicio > 1 ? 's' : ''} registrada${citasDelServicio > 1 ? 's' : ''}. ` +
-        `Primero debes eliminar las citas en la sección "Registrar Cita".`
-      );
-      return;
+      if (!window.confirm(
+        `⚠️ ATENCIÓN\n\n"${nombreServicio}" tiene ${citasDelServicio} cita${citasDelServicio > 1 ? 's' : ''}.\n\n` +
+        `✅ Las citas se guardarán con el servicio como "❌ (Eliminado)"\n` +
+        `✅ Los datos de la cita (precio, notas, fecha) se mantienen intactos\n\n` +
+        `¿Deseas continuar?`
+      )) {
+        return;
+      }
     }
 
-    if (window.confirm(`¿Estás seguro de que deseas eliminar el servicio "${nombreServicio}"?`)) {
+    if (window.confirm(`¿Estás SEGURO de que deseas eliminar "${nombreServicio}"?`)) {
       try {
         setLoading(true);
         await axios.delete(`${API_URL}/api/servicios/${id}`, {
           headers: getHeaders()
         });
-        setSuccess('✅ Servicio eliminado correctamente');
+        setSuccess('✅ Servicio eliminado correctamente. Las citas se mantienen intactas.');
         setError('');
         await cargarServicios();
+        await cargarCitas();
         setTimeout(() => setSuccess(''), 3000);
       } catch (err) {
         setError(err.response?.data?.error || 'Error al eliminar servicio');
@@ -324,8 +328,8 @@ export default function Servicios() {
                             {citasCount[servicio.id] || 0}
                           </span>
                           {tieneCitas && (
-                            <div className="text-xs text-red-600 mt-1 p-2 bg-red-50 rounded">
-                              ⚠️ No se puede eliminar (tiene citas)
+                            <div className="text-xs text-blue-600 mt-2 p-2 bg-blue-50 rounded">
+                              ℹ️ Tiene citas. Al eliminar, mostrarán "❌ (Eliminado)"
                             </div>
                           )}
                         </div>
@@ -342,13 +346,8 @@ export default function Servicios() {
                       </button>
                       <button
                         onClick={() => handleEliminar(servicio.id, servicio.nombre)}
-                        disabled={loading || tieneCitas}
-                        className={`flex-1 px-3 py-2 text-white text-sm font-bold rounded-lg transition flex items-center justify-center gap-2 ${
-                          tieneCitas 
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : 'bg-red-500 hover:bg-red-600'
-                        }`}
-                        title={tieneCitas ? `No se puede eliminar (${citasCount[servicio.id]} citas)` : 'Eliminar servicio'}
+                        disabled={loading}
+                        className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <span>🗑️</span> Eliminar
                       </button>
