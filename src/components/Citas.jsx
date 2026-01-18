@@ -19,7 +19,6 @@ export default function Citas() {
     barbero_id: '',
     servicio_id: '',
     precio: '',
-    fecha: '',
     notas: ''
   });
 
@@ -61,10 +60,21 @@ export default function Citas() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Si cambia el servicio, auto-llenar el precio
+    if (name === 'servicio_id' && value) {
+      const servicioSeleccionado = servicios.find(s => s.id === parseInt(value));
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        precio: servicioSeleccionado ? servicioSeleccionado.precio : ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -72,11 +82,6 @@ export default function Citas() {
     
     if (!formData.precio || formData.precio <= 0) {
       setError('El precio es requerido y debe ser mayor a 0');
-      return;
-    }
-
-    if (!formData.fecha) {
-      setError('La fecha es requerida');
       return;
     }
 
@@ -88,7 +93,7 @@ export default function Citas() {
         barbero_id: formData.barbero_id ? parseInt(formData.barbero_id) : null,
         servicio_id: formData.servicio_id ? parseInt(formData.servicio_id) : null,
         precio: parseFloat(formData.precio),
-        fecha: formData.fecha,
+        fecha: new Date().toISOString(),
         notas: formData.notas
       };
 
@@ -109,7 +114,6 @@ export default function Citas() {
         barbero_id: '',
         servicio_id: '',
         precio: '',
-        fecha: '',
         notas: ''
       });
       setShowForm(false);
@@ -131,7 +135,6 @@ export default function Citas() {
       barbero_id: cita.barbero_id || '',
       servicio_id: cita.servicio_id || '',
       precio: cita.precio,
-      fecha: cita.fecha.split('T')[0],
       notas: cita.notas || ''
     });
     setEditingId(cita.id);
@@ -145,7 +148,6 @@ export default function Citas() {
       barbero_id: '',
       servicio_id: '',
       precio: '',
-      fecha: '',
       notas: ''
     });
     setShowForm(false);
@@ -297,27 +299,14 @@ export default function Citas() {
                 name="precio"
                 value={formData.precio}
                 onChange={handleInputChange}
-                placeholder="Ej: 150"
+                placeholder="Auto-se llena al seleccionar servicio"
                 step="0.01"
                 min="0"
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Fecha <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                name="fecha"
-                value={formData.fecha}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-300 transition"
-              />
-            </div>
-
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Notas
               </label>
