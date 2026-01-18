@@ -11,7 +11,8 @@ export default function Sidebar({ currentPage, setCurrentPage, usuario }) {
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
     ...(usuario?.rol === 'admin' ? [
       { id: 'barberos', label: '💈 Barberos', icon: '💈' },
-      { id: 'servicios', label: '✂️ Servicios', icon: '✂️' }
+      { id: 'servicios', label: '✂️ Servicios', icon: '✂️' },
+      { id: 'usuarios', label: '👥 Usuarios', icon: '👥' }
     ] : []),
     { id: 'clientes', label: '👥 Clientes', icon: '👥' },
     { id: 'precios', label: '📅 Citas', icon: '📅' },

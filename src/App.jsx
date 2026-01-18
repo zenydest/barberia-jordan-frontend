@@ -9,6 +9,8 @@ import Clientes from './components/Clientes';
 import Servicios from './components/Servicios';
 import Citas from './components/Citas';
 import Reportes from './components/Reportes';
+import Usuarios from './components/Usuarios';
+
 
 
 
@@ -49,6 +51,7 @@ function AppContent() {
           {currentPage === 'servicios' && user?.rol === 'admin' && <Servicios />}
           {currentPage === 'precios' && <Citas />}
           {currentPage === 'reportes' && <Reportes />}
+          {currentPage === 'usuarios' && user?.rol === 'admin' && <Usuarios />}
         </main>
       </div>
     </ProtectedRoute>
