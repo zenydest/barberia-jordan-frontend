@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
 
 
   // ✅ URL CORRECTA DE RAILWAY
-  const API_URL = import.meta.env.VITE_API_URL || 'https://barberia-jordan-backend.railway.app';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-ae8e1.up.railway.app/';
 
 
 
