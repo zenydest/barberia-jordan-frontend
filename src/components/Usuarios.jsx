@@ -1,17 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
 import './Usuarios.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://barberia-jordan-backend.railway.app';
-
 export default function Usuarios() {
+  const { apiUrl, token } = useContext(AuthContext);
   const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -20,31 +17,40 @@ export default function Usuarios() {
     estado: 'activo'
   });
 
-  const token = localStorage.getItem('token');
-
-  // ==================== CARGAR USUARIOS ====================
+  // Cargar usuarios
   useEffect(() => {
     cargarUsuarios();
   }, []);
 
   const cargarUsuarios = async () => {
-    setLoading(true);
-    setError('');
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/usuarios`, {
-        headers: { Authorization: `Bearer ${token}` }
+      setLoading(true);
+      const response = await fetch(`${apiUrl}/api/usuarios`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
-      setUsuarios(response.data);
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setUsuarios(data);
+      setError(null);
     } catch (err) {
-      setError('Error al cargar usuarios: ' + (err.response?.data?.error || err.message));
+      setError(`Error al cargar usuarios: ${err.message}`);
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // ==================== LIMPIAR FORMULARIO ====================
-  const limpiarFormulario = () => {
+  // Abrir modal para crear
+  const abrirCrear = () => {
+    setEditingId(null);
     setFormData({
       nombre: '',
       email: '',
@@ -52,17 +58,12 @@ export default function Usuarios() {
       rol: 'barbero',
       estado: 'activo'
     });
-    setEditingId(null);
-  };
-
-  // ==================== ABRIR MODAL PARA CREAR ====================
-  const abrirModalCrear = () => {
-    limpiarFormulario();
     setShowModal(true);
   };
 
-  // ==================== EDITAR USUARIO ====================
-  const editarUsuario = (usuario) => {
+  // Abrir modal para editar
+  const abrirEditar = (usuario) => {
+    setEditingId(usuario.id);
     setFormData({
       nombre: usuario.nombre,
       email: usuario.email,
@@ -70,95 +71,75 @@ export default function Usuarios() {
       rol: usuario.rol,
       estado: usuario.estado
     });
-    setEditingId(usuario.id);
     setShowModal(true);
   };
 
-  // ==================== GUARDAR USUARIO ====================
+  // Guardar usuario
   const guardarUsuario = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    // Validaciones
-    if (!formData.nombre.trim() || !formData.email.trim()) {
-      setError('El nombre y email son requeridos');
-      return;
-    }
-
-    if (!editingId && !formData.password.trim()) {
-      setError('La contraseña es requerida para nuevos usuarios');
-      return;
-    }
-
-    setLoading(true);
 
     try {
-      const dataToSend = { ...formData };
-      
-      // Si no hay contraseña en edición, no enviarla
-      if (editingId && !formData.password) {
-        delete dataToSend.password;
+      const url = editingId
+        ? `${apiUrl}/api/usuarios/${editingId}`
+        : `${apiUrl}/api/usuarios`;
+
+      const method = editingId ? 'PUT' : 'POST';
+
+      const payload = { ...formData };
+      if (!editingId || !payload.password) {
+        delete payload.password;
       }
 
-      let response;
-      if (editingId) {
-        // Actualizar usuario
-        response = await axios.put(
-          `${API_BASE_URL}/api/usuarios/${editingId}`,
-          dataToSend,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setSuccess('Usuario actualizado correctamente');
-      } else {
-        // Crear usuario
-        response = await axios.post(
-          `${API_BASE_URL}/api/usuarios`,
-          dataToSend,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setSuccess('Usuario creado correctamente');
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || `Error: ${response.status}`);
       }
 
+      await cargarUsuarios();
       setShowModal(false);
-      limpiarFormulario();
-      cargarUsuarios();
+      setError(null);
     } catch (err) {
-      const errorMsg = err.response?.data?.error || err.message;
-      setError('Error: ' + errorMsg);
+      setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // ==================== ELIMINAR USUARIO ====================
-  const eliminarUsuario = async (id, email) => {
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar a ${email}?`)) {
+  // Eliminar usuario
+  const eliminarUsuario = async (id) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
     try {
-      await axios.delete(
-        `${API_BASE_URL}/api/usuarios/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setSuccess('Usuario eliminado correctamente');
-      cargarUsuarios();
+      const response = await fetch(`${apiUrl}/api/usuarios/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || `Error: ${response.status}`);
+      }
+
+      await cargarUsuarios();
+      setError(null);
     } catch (err) {
-      const errorMsg = err.response?.data?.error || err.message;
-      setError('Error al eliminar: ' + errorMsg);
+      setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // ==================== CAMBIAR CAMPO ====================
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -167,145 +148,135 @@ export default function Usuarios() {
     }));
   };
 
+  if (loading) {
+    return (
+      <div className="usuarios-container">
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Cargando usuarios...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="usuarios-container">
       <div className="usuarios-header">
-        <h2>Gestión de Usuarios</h2>
-        <button 
-          className="btn btn-primary"
-          onClick={abrirModalCrear}
-          disabled={loading}
-        >
+        <h1>Gestión de Usuarios</h1>
+        <button className="btn-crear-usuario" onClick={abrirCrear}>
           ➕ Crear Usuario
         </button>
       </div>
 
-      {/* MENSAJES DE ERROR Y ÉXITO */}
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
-
-      {/* TABLA DE USUARIOS */}
-      {loading && !showModal ? (
-        <div className="loading">Cargando usuarios...</div>
-      ) : usuarios.length === 0 ? (
-        <div className="no-data">No hay usuarios registrados</div>
-      ) : (
-        <div className="table-responsive">
-          <table className="usuarios-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Nombre</th>
-                <th>Rol</th>
-                <th>Estado</th>
-                <th>Registro</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map(usuario => (
-                <tr key={usuario.id} className={usuario.estado === 'inactivo' ? 'inactive' : ''}>
-                  <td>{usuario.email}</td>
-                  <td>{usuario.nombre}</td>
-                  <td>
-                    <span className={`badge badge-${usuario.rol}`}>
-                      {usuario.rol}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge badge-${usuario.estado === 'activo' ? 'success' : 'error'}`}>
-                      {usuario.estado}
-                    </span>
-                  </td>
-                  <td>{usuario.fecha_registro}</td>
-                  <td className="actions">
-                    <button
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => editarUsuario(usuario)}
-                      disabled={loading}
-                      title="Editar usuario"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => eliminarUsuario(usuario.id, usuario.email)}
-                      disabled={loading || usuario.email === 'Rodritapia92@gmail.com'}
-                      title={usuario.email === 'Rodritapia92@gmail.com' ? 'No puedes eliminar el admin principal' : 'Eliminar usuario'}
-                    >
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {error && (
+        <div className="error-banner">
+          {error}
         </div>
       )}
 
-      {/* MODAL PARA CREAR/EDITAR USUARIO */}
+      {usuarios.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">👥</div>
+          <p>No hay usuarios registrados</p>
+          <p style={{ fontSize: '14px' }}>Haz clic en "Crear Usuario" para comenzar</p>
+        </div>
+      ) : (
+        <div className="usuarios-grid">
+          {usuarios.map(usuario => (
+            <div key={usuario.id} className="usuario-card">
+              <div className="usuario-card-header">
+                <div className="usuario-nombre">{usuario.nombre}</div>
+                <span className={`usuario-rol ${usuario.rol}`}>
+                  {usuario.rol}
+                </span>
+              </div>
+
+              <div className="usuario-info">
+                <span>📧 {usuario.email}</span>
+              </div>
+
+              <div>
+                <span className={`usuario-estado ${usuario.estado}`}>
+                  {usuario.estado.toUpperCase()}
+                </span>
+              </div>
+
+              <div className="usuario-info" style={{ marginTop: '10px', fontSize: '12px' }}>
+                <span>📅 Registrado: {usuario.fecha_registro}</span>
+              </div>
+
+              <div className="usuario-actions">
+                <button
+                  className="usuario-actions button btn-editar"
+                  onClick={() => abrirEditar(usuario)}
+                >
+                  ✏️ Editar
+                </button>
+                <button
+                  className="usuario-actions button btn-eliminar"
+                  onClick={() => eliminarUsuario(usuario.id)}
+                  disabled={usuario.email === 'Rodritapia92@gmail.com'}
+                >
+                  🗑️ Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingId ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</h3>
-              <button 
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-              >
+              <h2>{editingId ? '✏️ Editar Usuario' : '➕ Crear Usuario'}</h2>
+              <button className="btn-close" onClick={() => setShowModal(false)}>
                 ✕
               </button>
             </div>
 
-            <form onSubmit={guardarUsuario} className="modal-form">
-              {/* NOMBRE */}
+            <form onSubmit={guardarUsuario}>
               <div className="form-group">
-                <label htmlFor="nombre">Nombre Completo *</label>
+                <label htmlFor="nombre">Nombre *</label>
                 <input
-                  type="text"
                   id="nombre"
+                  type="text"
                   name="nombre"
                   value={formData.nombre}
                   onChange={handleInputChange}
-                  placeholder="Juan Pérez"
-                  disabled={loading}
                   required
+                  placeholder="Ej: Juan Pérez"
                 />
               </div>
 
-              {/* EMAIL */}
               <div className="form-group">
                 <label htmlFor="email">Email *</label>
                 <input
-                  type="email"
                   id="email"
+                  type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="juan@example.com"
-                  disabled={loading}
                   required
+                  placeholder="Ej: juan@example.com"
                 />
               </div>
 
-              {/* CONTRASEÑA */}
               <div className="form-group">
                 <label htmlFor="password">
                   Contraseña {editingId ? '(dejar vacío para no cambiar)' : '*'}
                 </label>
                 <input
-                  type="password"
                   id="password"
+                  type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  placeholder="••••••••"
-                  disabled={loading}
                   required={!editingId}
+                  placeholder="Mínimo 6 caracteres"
                 />
               </div>
 
-              {/* ROL */}
               <div className="form-group">
                 <label htmlFor="rol">Rol *</label>
                 <select
@@ -313,16 +284,14 @@ export default function Usuarios() {
                   name="rol"
                   value={formData.rol}
                   onChange={handleInputChange}
-                  disabled={loading}
                   required
                 >
                   <option value="barbero">Barbero</option>
                   <option value="admin">Administrador</option>
-                  <option value="recepcion">Recepción</option>
+                  <option value="cliente">Cliente</option>
                 </select>
               </div>
 
-              {/* ESTADO */}
               <div className="form-group">
                 <label htmlFor="estado">Estado *</label>
                 <select
@@ -330,7 +299,6 @@ export default function Usuarios() {
                   name="estado"
                   value={formData.estado}
                   onChange={handleInputChange}
-                  disabled={loading}
                   required
                 >
                   <option value="activo">Activo</option>
@@ -338,22 +306,16 @@ export default function Usuarios() {
                 </select>
               </div>
 
-              {/* BOTONES */}
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                  disabled={loading}
-                >
-                  Cancelar
+              <div className="modal-actions">
+                <button type="submit" className="btn-guardar">
+                  💾 {editingId ? 'Actualizar' : 'Crear'}
                 </button>
                 <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={loading}
+                  type="button"
+                  className="btn-cancelar"
+                  onClick={() => setShowModal(false)}
                 >
-                  {loading ? 'Guardando...' : (editingId ? 'Actualizar' : 'Crear')}
+                  Cancelar
                 </button>
               </div>
             </form>
